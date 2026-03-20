@@ -1,0 +1,12 @@
+# node
+node_modules/
+
+# env (สำคัญ)
+.env
+
+# uploads (ถ้าไม่อยากอัปไฟล์)
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
