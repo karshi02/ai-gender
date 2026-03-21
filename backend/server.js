@@ -1,9 +1,8 @@
-import express from "express";
-import cors from "cors";
-import multer from "multer";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
+const dotenv = require("dotenv");
+const path = require("path");
 // import { generateImageWithReplicate } from "./replicate.js"; // เปลี่ยนเป็น replicate
 
 // 1️⃣ โหลด .env
@@ -17,8 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // 4️⃣ setup path สำหรับเสิร์ฟไฟล์
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// In CommonJS __dirname is already available
 
 // 5️⃣ เสิร์ฟ frontend
 app.use(express.static(path.join(__dirname, "../frontend")));
@@ -57,7 +55,7 @@ app.post("/generate", upload.single("image"), async (req, res) => {
 });
 
 // 🔟 start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
