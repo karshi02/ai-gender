@@ -4,7 +4,7 @@ import multer from "multer";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { generateImageWithReplicate } from "./replicate.js"; // เปลี่ยนเป็น replicate
+// import { generateImageWithReplicate } from "./replicate.js"; // เปลี่ยนเป็น replicate
 
 // 1️⃣ โหลด .env
 dotenv.config({ path: "./backend/.env" });
