@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ทดสอบ Gemini Chat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .status {
+            padding: 10px;
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 ทดสอบ Gemini API</h1>
+        <div class="status" id="status">
+            ✅ Server is running
+        </div>
+        
+        <label for="message">คำถามของคุณ:</label>
+        <textarea id="message" rows="4" placeholder="พิมพ์คำถามที่นี่... เช่น สวัสดี, ช่วยแนะนำหนังสือ, อธิบาย quantum physics แบบง่ายๆ"></textarea>
+        
+        <button onclick="sendMessage()">ส่งคำถาม</button>
+        <button onclick="clearMessage()">ล้าง</button>
+        
+        <div id="response"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api/chat';
+        
+        async function sendMessage() {
+            const message = document.getElementById('message').value.trim();
+            const responseDiv = document.getElementById('response');
+            
+            if (!message) {
+                responseDiv.innerHTML = '<span class="error">⚠️ กรุณาพิมพ์คำถามก่อน</span>';
+                return;
+            }
+            
+            responseDiv.innerHTML = '<div class="loading">🤔 กำลังคิดคำตอบ...</div>';
+            
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    responseDiv.innerHTML = `
+                        <strong>💬 คำตอบ:</strong><br><br>
+                        ${data.reply.replace(/\n/g, '<br>')}
+                    `;
+                } else {
+                    responseDiv.innerHTML = `<span class="error">❌ เกิดข้อผิดพลาด: ${data.error}</span>`;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `<span class="error">❌ ไม่สามารถเชื่อมต่อกับ server: ${error.message}</span>`;
+            }
+        }
+        
+        function clearMessage() {
+            document.getElementById('message').value = '';
+            document.getElementById('response').innerHTML = '';
+        }
+        
+        // ทดสอบการเชื่อมต่อกับ server
+        async function checkConnection() {
+            try {
+                const res = await fetch('http://localhost:3001/api/health');
+                const data = await res.json();
+                if (data.status === 'OK') {
+                    document.getElementById('status').innerHTML = '✅ Server is running and ready';
+                    document.getElementById('status').style.background = '#e8f5e9';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = '❌ Cannot connect to server';
+                document.getElementById('status').style.background = '#ffebee';
+                document.getElementById('status').style.borderLeftColor = '#f44336';
+            }
+        }
+        
+        checkConnection();
+    </script>
+</body>
+</html>

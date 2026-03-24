@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <title>AI Photobooth</title>
@@ -19,4 +19,66 @@
 
 <script src="script.js"></script>
 </body>
-</html>        
+</html>         -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ถามตอบกับ Gemini</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; }
+        textarea { width: 100%; padding: 0.5rem; font-size: 1rem; }
+        button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background: #0f9d58; color: white; border: none; border-radius: 4px; }
+        #response { margin-top: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; background: #f9f9f9; }
+        .loading { color: #666; font-style: italic; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🤖 ทดสอบ Gemini API (ถาม-ตอบ)</h1>
+    <textarea id="prompt" rows="4" placeholder="พิมพ์คำถามของคุณ... เช่น สวัสดี ช่วยแนะนำหนังสือดีๆ หน่อย"></textarea>
+    <br><br>
+    <button onclick="askGemini()">ส่งคำถาม</button>
+    <div id="response"></div>
+
+    <script>
+        const API_KEY = "YOUR_GEMINI_API_KEY"; // ใส่ API key ของคุณตรงนี้
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+        async function askGemini() {
+            const prompt = document.getElementById('prompt').value.trim();
+            const responseDiv = document.getElementById('response');
+            
+            if (!prompt) {
+                responseDiv.innerHTML = '<span class="error">กรุณาพิมพ์คำถามก่อน</span>';
+                return;
+            }
+
+            responseDiv.innerHTML = '<span class="loading">กำลังคิดคำตอบ...</span>';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error?.message || `HTTP ${res.status}`);
+                }
+
+                const data = await res.json();
+                const answer = data.candidates[0].content.parts[0].text;
+                responseDiv.innerHTML = `<strong>คำตอบ:</strong><br>${answer.replace(/\n/g, '<br>')}`;
+            } catch (error) {
+                responseDiv.innerHTML = `<span class="error">เกิดข้อผิดพลาด: ${error.message}</span>`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

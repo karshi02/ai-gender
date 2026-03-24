@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AI Theme Changer - เปลี่ยนชุดด้วย AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .camera-section {
+            padding: 25px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .photo-preview {
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 20px;
+            border-radius: 20px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            border: 3px dashed #ddd;
+            transition: all 0.3s;
+        }
+        
+        .photo-preview.has-photo {
+            border: 3px solid #667eea;
+        }
+        
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .placeholder-icon {
+            font-size: 50px;
+            color: #ccc;
+        }
+        
+        .camera-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-camera {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-camera:hover {
+            transform: translateY(-2px);
+            background: #5a67d8;
+        }
+        
+        .btn-camera.secondary {
+            background: #48bb78;
+        }
+        
+        .btn-camera.danger {
+            background: #f56565;
+        }
+        
+        .theme-section {
+            padding: 25px;
+        }
+        
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .theme-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .theme-card:hover {
+            transform: translateY(-3px);
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+        
+        .theme-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.3);
+        }
+        
+        .theme-emoji {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .theme-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            padding: 25px;
+            background: #f7fafc;
+            border-top: 1px solid #eee;
+        }
+        
+        .result-image {
+            width: 100%;
+            border-radius: 20px;
+            margin-top: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 500px) {
+            .theme-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 AI Theme Changer</h1>
+            <p>ถ่ายรูปหน้า แล้วเลือกธีมที่ต้องการ</p>
+            <div class="status-badge" id="statusBadge">🟢 พร้อมใช้งาน</div>
+        </div>
+        
+        <div class="camera-section">
+            <div class="photo-preview" id="photoPreview">
+                <div class="placeholder-icon">📸</div>
+            </div>
+            
+            <div class="camera-buttons">
+                <button class="btn-camera" onclick="openCamera()">
+                    📷 เปิดกล้อง
+                </button>
+                <button class="btn-camera secondary" onclick="uploadPhoto()">
+                    📁 อัปโหลดรูป
+                </button>
+                <button class="btn-camera danger" onclick="clearPhoto()">
+                    🗑️ ล้างรูป
+                </button>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(this)">
+            <video id="video" style="display: none" autoplay playsinline></video>
+            <canvas id="canvas" style="display: none"></canvas>
+        </div>
+        
+        <div class="theme-section">
+            <h3>🎨 เลือกธีมที่ต้องการ</h3>
+            <div class="theme-grid" id="themeGrid">
+                <!-- ธีมจะถูกสร้างด้วย JavaScript -->
+            </div>
+            
+            <button class="generate-btn" id="generateBtn" onclick="generateImage()" disabled>
+                ✨ สร้างภาพด้วย AI
+            </button>
+        </div>
+        
+        <div class="result-section" id="resultSection" style="display: none;">
+            <h3>🎉 ผลลัพธ์</h3>
+            <img id="resultImage" class="result-image" alt="Generated image">
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn-camera" onclick="downloadImage()">💾 ดาวน์โหลดภาพ</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="loadingOverlay" style="display: none;" class="loading-overlay">
+        <div class="spinner"></div>
+        <div>🎨 กำลังสร้างภาพด้วย AI...</div>
+        <div style="font-size: 12px; opacity: 0.7;">Gemini กำลังทำงาน กรุณารอสักครู่</div>
+    </div>
+
+    <script>
+        // ธีมต่างๆ
+        const themes = [
+            { name: "นักบินอวกาศ", emoji: "👨‍🚀", prompt: "astronaut in futuristic space suit" },
+            { name: "ซูเปอร์ฮีโร่", emoji: "🦸", prompt: "superhero with cape and mask" },
+            { name: "เจ้าหญิง", emoji: "👸", prompt: "princess with elegant dress and crown" },
+            { name: "ซามูไร", emoji: "⚔️", prompt: "samurai with traditional armor" },
+            { name: "เอเลี่ยน", emoji: "👽", prompt: "alien creature with big eyes" },
+            { name: "โจรสลัด", emoji: "🏴‍☠️", prompt: "pirate with hat and eyepatch" },
+            { name: "ไซเบอร์พังค์", emoji: "🤖", prompt: "cyberpunk with neon lights and futuristic style" },
+            { name: "เวทมนตร์", emoji: "🧙", prompt: "wizard with magical robe and staff" },
+            { name: "สโนว์บอร์ด", emoji: "🏂", prompt: "cool snowboarder with winter gear" },
+            { name: "ราชา", emoji: "👑", prompt: "king with royal robe and crown" },
+            { name: "นินจา", emoji: "🥷", prompt: "ninja in black outfit with mask" },
+            { name: "ยุค 80", emoji: "🕺", prompt: "80s style with colorful retro outfit" }
+        ];
+        
+        let currentPhoto = null;  // base64 ของรูปที่ถ่าย/อัปโหลด
+        let selectedTheme = null;
+        let generatedImageUrl = null;
+        
+        // สร้างปุ่มธีม
+        function createThemeButtons() {
+            const grid = document.getElementById('themeGrid');
+            grid.innerHTML = themes.map((theme, index) => `
+                <div class="theme-card" onclick="selectTheme(${index})" data-theme="${index}">
+                    <div class="theme-emoji">${theme.emoji}</div>
+                    <div class="theme-name">${theme.name}</div>
+                </div>
+            `).join('');
+        }
+        
+        function selectTheme(index) {
+            selectedTheme = themes[index];
+            // ลบคลาส selected จากทุกการ์ด
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            // เพิ่มคลาส selected ให้การ์ดที่เลือก
+            document.querySelector(`.theme-card[data-theme="${index}"]`).classList.add('selected');
+            
+            // เปิดปุ่มสร้างภาพถ้ามีรูปแล้ว
+            updateGenerateButton();
+        }
+        
+        function updateGenerateButton() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = !(currentPhoto && selectedTheme);
+            if (currentPhoto && selectedTheme) {
+                btn.textContent = `✨ สร้างภาพธีม ${selectedTheme.name}`;
+            } else if (!currentPhoto) {
+                btn.textContent = `📸 กรุณาถ่ายรูปก่อน`;
+            } else if (!selectedTheme) {
+                btn.textContent = `🎨 กรุณาเลือกธีม`;
+            }
+        }
+        
+        // เปิดกล้อง
+        async function openCamera() {
+            try {
+                const video = document.getElementById('video');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                
+                // แสดงกล้องใน preview ชั่วคราว
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = '';
+                preview.appendChild(video);
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'cover';
+                
+                // แทนที่ปุ่มกล้องด้วยปุ่มถ่ายรูป
+                const cameraBtns = document.querySelector('.camera-buttons');
+                const oldHTML = cameraBtns.innerHTML;
+                cameraBtns.innerHTML = `
+                    <button class="btn-camera" onclick="takePhoto()">
+                        📸 ถ่ายรูป
+                    </button>
+                    <button class="btn-camera danger" onclick="closeCamera()">
+                        ❌ ยกเลิก
+                    </button>
+                `;
+                
+                window.currentStream = stream;
+            } catch (error) {
+                alert('ไม่สามารถเปิดกล้องได้: ' + error.message);
+            }
+        }
+        
+        function takePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // แปลงเป็น base64
+            currentPhoto = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // แสดงใน preview
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = `<img src="${currentPhoto}" alt="Your photo">`;
+            preview.classList.add('has-photo');
+            
+            closeCamera();
+            updateGenerateButton();
+        }
+        
+        function closeCamera() {
+            const video = document.getElementById('video');
+            if (window.currentStream) {
+                window.currentStream.getTracks().forEach(track => track.stop());
+                window.currentStream = null;
+            }
+            video.style.display = 'none';
+            
+            // เรียกคืนปุ่มเดิม
+            const cameraBtns = document.querySelector('.camera-buttons');
+            cameraBtns.innerHTML = `
+                <button class="btn-camera" onclick="openCamera()">
+                    📷 เปิดกล้อง
+                </button>
+                <button class="btn-camera secondary" onclick="uploadPhoto()">
+                    📁 อัปโหลดรูป
+                </button>
+                <button class="btn-camera danger" onclick="clearPhoto()">
+                    🗑️ ล้างรูป
+                </button>
+            `;
+            
+            // ถ้ายังไม่มีรูป ให้แสดง placeholder
+            if (!currentPhoto) {
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = '<div class="placeholder-icon">📸</div>';
+                preview.classList.remove('has-photo');
+            }
+        }
+        
+        // อัปโหลดรูป
+        function uploadPhoto() {
+            document.getElementById('fileInput').click();
+        }
+        
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentPhoto = e.target.result;
+                    const preview = document.getElementById('photoPreview');
+                    preview.innerHTML = `<img src="${currentPhoto}" alt="Your photo">`;
+                    preview.classList.add('has-photo');
+                    updateGenerateButton();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function clearPhoto() {
+            currentPhoto = null;
+            selectedTheme = null;
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '<div class="placeholder-icon">📸</div>';
+            preview.classList.remove('has-photo');
+            document.getElementById('resultSection').style.display = 'none';
+            generatedImageUrl = null;
+            
+            // ลบการเลือกธีม
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            updateGenerateButton();
+        }
+        
+        // สร้างภาพด้วย Gemini
+        async function generateImage() {
+            if (!currentPhoto || !selectedTheme) return;
+            
+            const loading = document.getElementById('loadingOverlay');
+            loading.style.display = 'flex';
+            
+            try {
+                // ส่งรูปและธีมไป backend
+                const response = await fetch('http://localhost:3001/api/generate-themed-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: currentPhoto,  // base64
+                        theme: selectedTheme.name,
+                        prompt: selectedTheme.prompt
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    generatedImageUrl = data.imageUrl;
+                    const resultImage = document.getElementById('resultImage');
+                    resultImage.src = generatedImageUrl;
+                    document.getElementById('resultSection').style.display = 'block';
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.error);
+                }
+            } catch (error) {
+                alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function downloadImage() {
+            if (generatedImageUrl) {
+                const link = document.createElement('a');
+                link.download = 'ai-themed-photo.jpg';
+                link.href = generatedImageUrl;
+                link.click();
+            }
+        }
+        
+        // ตรวจสอบการเชื่อมต่อ server
+        async function checkServer() {
+            try {
+                const res = await fetch('http://localhost:3001/api/health');
+                const data = await res.json();
+                if (data.status === 'OK') {
+                    document.getElementById('statusBadge').innerHTML = '🟢 เชื่อมต่อเซิร์ฟเวอร์แล้ว';
+                    document.getElementById('statusBadge').style.background = '#c6f6d5';
+                }
+            } catch (error) {
+                document.getElementById('statusBadge').innerHTML = '🔴 ไม่เชื่อมต่อเซิร์ฟเวอร์';
+                document.getElementById('statusBadge').style.background = '#fed7d7';
+            }
+        }
+        
+        // เริ่มต้น
+        createThemeButtons();
+        checkServer();
+        setInterval(checkServer, 5000);
+    </script>
+</body>
+</html>
