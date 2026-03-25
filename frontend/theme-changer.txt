@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AI Theme Changer - เปลี่ยนชุดด้วย AI (ฟรี)</title>
+    <title>AI Theme Changer - เปลี่ยนชุดด้วย AI</title>
     <style>
         * {
             margin: 0;
@@ -44,25 +44,6 @@
             font-size: 14px;
         }
         
-        .status-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-top: 10px;
-            background: rgba(255,255,255,0.2);
-        }
-        
-        .free-badge {
-            display: inline-block;
-            background: #48bb78;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            margin-left: 10px;
-        }
-        
         .camera-section {
             padding: 25px;
             text-align: center;
@@ -79,6 +60,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            position: relative;
             border: 3px dashed #ddd;
             transition: all 0.3s;
         }
@@ -109,9 +91,9 @@
             background: #667eea;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: 50px;
-            font-size: 14px;
+            font-size: 16px;
             cursor: pointer;
             transition: transform 0.2s;
             display: inline-flex;
@@ -134,11 +116,6 @@
         
         .theme-section {
             padding: 25px;
-        }
-        
-        .theme-section h3 {
-            margin-bottom: 15px;
-            color: #333;
         }
         
         .theme-grid {
@@ -210,11 +187,6 @@
             border-top: 1px solid #eee;
         }
         
-        .result-section h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-        
         .result-image {
             width: 100%;
             border-radius: 20px;
@@ -251,28 +223,12 @@
             to { transform: rotate(360deg); }
         }
         
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            justify-content: center;
-        }
-        
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
             border-radius: 20px;
-        }
-        
-        .info-note {
-            background: #fef5e7;
-            border-left: 4px solid #f39c12;
-            padding: 12px;
-            margin-top: 15px;
-            border-radius: 8px;
             font-size: 12px;
-            color: #7f8c8d;
+            margin-top: 10px;
         }
         
         @media (max-width: 500px) {
@@ -286,8 +242,8 @@
     <div class="container">
         <div class="header">
             <h1>🎭 AI Theme Changer</h1>
-            <p>ถ่ายรูปหน้า แล้วเลือกธีมที่ต้องการ <span class="free-badge">ฟรี 100%</span></p>
-            <div class="status-badge" id="statusBadge">🟢 กำลังเชื่อมต่อ...</div>
+            <p>ถ่ายรูปหน้า แล้วเลือกธีมที่ต้องการ</p>
+            <div class="status-badge" id="statusBadge">🟢 พร้อมใช้งาน</div>
         </div>
         
         <div class="camera-section">
@@ -295,7 +251,7 @@
                 <div class="placeholder-icon">📸</div>
             </div>
             
-            <div class="camera-buttons" id="cameraButtons">
+            <div class="camera-buttons">
                 <button class="btn-camera" onclick="openCamera()">
                     📷 เปิดกล้อง
                 </button>
@@ -313,26 +269,20 @@
         
         <div class="theme-section">
             <h3>🎨 เลือกธีมที่ต้องการ</h3>
-            <div class="theme-grid" id="themeGrid"></div>
+            <div class="theme-grid" id="themeGrid">
+                <!-- ธีมจะถูกสร้างด้วย JavaScript -->
+            </div>
             
             <button class="generate-btn" id="generateBtn" onclick="generateImage()" disabled>
                 ✨ สร้างภาพด้วย AI
             </button>
-            
-            <div class="info-note">
-                💡 <strong>ข้อมูล:</strong> ใช้ Hugging Face FLUX.1-dev (ฟรี) สร้างภาพคุณภาพสูง 
-                • ครั้งแรกอาจใช้เวลา 20-30 วินาที (โหลดโมเดล) 
-                • หลังจากนั้นจะเร็วขึ้น
-            </div>
         </div>
         
         <div class="result-section" id="resultSection" style="display: none;">
             <h3>🎉 ผลลัพธ์</h3>
             <img id="resultImage" class="result-image" alt="Generated image">
-            <div class="button-group">
-                <button class="btn-camera secondary" onclick="downloadImage()">💾 ดาวน์โหลด</button>
-                <button class="btn-camera" onclick="shareImage()">📤 แชร์</button>
-                <button class="btn-camera danger" onclick="clearResult()">🗑️ ล้างผลลัพธ์</button>
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn-camera" onclick="downloadImage()">💾 ดาวน์โหลดภาพ</button>
             </div>
         </div>
     </div>
@@ -340,28 +290,27 @@
     <div id="loadingOverlay" style="display: none;" class="loading-overlay">
         <div class="spinner"></div>
         <div>🎨 กำลังสร้างภาพด้วย AI...</div>
-        <div style="font-size: 12px; opacity: 0.7;">FLUX.1-dev กำลังทำงาน (ฟรี) กรุณารอสักครู่</div>
-        <div style="font-size: 10px; opacity: 0.5; margin-top: 10px;">ครั้งแรกอาจใช้เวลา 20-30 วินาที</div>
+        <div style="font-size: 12px; opacity: 0.7;">Gemini กำลังทำงาน กรุณารอสักครู่</div>
     </div>
 
     <script>
         // ธีมต่างๆ
         const themes = [
-            { name: "นักบินอวกาศ", emoji: "👨‍🚀", prompt: "astronaut in futuristic space suit, helmet, space background, stars" },
-            { name: "ซูเปอร์ฮีโร่", emoji: "🦸", prompt: "superhero with cape, mask, heroic pose, city background" },
-            { name: "เจ้าหญิง", emoji: "👸", prompt: "princess with elegant dress, crown, magical castle background" },
-            { name: "ซามูไร", emoji: "⚔️", prompt: "samurai with traditional armor, katana, Japanese temple background" },
-            { name: "เอเลี่ยน", emoji: "👽", prompt: "alien creature, sci-fi, futuristic spaceship background" },
-            { name: "โจรสลัด", emoji: "🏴‍☠️", prompt: "pirate with hat, eyepatch, pirate ship, ocean background" },
-            { name: "ไซเบอร์พังค์", emoji: "🤖", prompt: "cyberpunk style, neon lights, futuristic city,高科技" },
-            { name: "เวทมนตร์", emoji: "🧙", prompt: "wizard with magical robe, staff, glowing magic, fantasy background" },
-            { name: "ราชา", emoji: "👑", prompt: "king with royal robe, crown, golden throne, palace background" },
-            { name: "นินจา", emoji: "🥷", prompt: "ninja in black outfit, mask, Japanese night background" },
-            { name: "ยุค 80", emoji: "🕺", prompt: "80s style, colorful retro outfit, neon, disco background" },
-            { name: "สโนว์บอร์ด", emoji: "🏂", prompt: "cool snowboarder, winter gear, snowy mountain background" }
+            { name: "นักบินอวกาศ", emoji: "👨‍🚀", prompt: "astronaut in futuristic space suit" },
+            { name: "ซูเปอร์ฮีโร่", emoji: "🦸", prompt: "superhero with cape and mask" },
+            { name: "เจ้าหญิง", emoji: "👸", prompt: "princess with elegant dress and crown" },
+            { name: "ซามูไร", emoji: "⚔️", prompt: "samurai with traditional armor" },
+            { name: "เอเลี่ยน", emoji: "👽", prompt: "alien creature with big eyes" },
+            { name: "โจรสลัด", emoji: "🏴‍☠️", prompt: "pirate with hat and eyepatch" },
+            { name: "ไซเบอร์พังค์", emoji: "🤖", prompt: "cyberpunk with neon lights and futuristic style" },
+            { name: "เวทมนตร์", emoji: "🧙", prompt: "wizard with magical robe and staff" },
+            { name: "สโนว์บอร์ด", emoji: "🏂", prompt: "cool snowboarder with winter gear" },
+            { name: "ราชา", emoji: "👑", prompt: "king with royal robe and crown" },
+            { name: "นินจา", emoji: "🥷", prompt: "ninja in black outfit with mask" },
+            { name: "ยุค 80", emoji: "🕺", prompt: "80s style with colorful retro outfit" }
         ];
         
-        let currentPhoto = null;
+        let currentPhoto = null;  // base64 ของรูปที่ถ่าย/อัปโหลด
         let selectedTheme = null;
         let generatedImageUrl = null;
         
@@ -378,10 +327,14 @@
         
         function selectTheme(index) {
             selectedTheme = themes[index];
+            // ลบคลาส selected จากทุกการ์ด
             document.querySelectorAll('.theme-card').forEach(card => {
                 card.classList.remove('selected');
             });
+            // เพิ่มคลาส selected ให้การ์ดที่เลือก
             document.querySelector(`.theme-card[data-theme="${index}"]`).classList.add('selected');
+            
+            // เปิดปุ่มสร้างภาพถ้ามีรูปแล้ว
             updateGenerateButton();
         }
         
@@ -405,6 +358,7 @@
                 video.srcObject = stream;
                 video.style.display = 'block';
                 
+                // แสดงกล้องใน preview ชั่วคราว
                 const preview = document.getElementById('photoPreview');
                 preview.innerHTML = '';
                 preview.appendChild(video);
@@ -412,7 +366,9 @@
                 video.style.height = '100%';
                 video.style.objectFit = 'cover';
                 
-                const cameraBtns = document.getElementById('cameraButtons');
+                // แทนที่ปุ่มกล้องด้วยปุ่มถ่ายรูป
+                const cameraBtns = document.querySelector('.camera-buttons');
+                const oldHTML = cameraBtns.innerHTML;
                 cameraBtns.innerHTML = `
                     <button class="btn-camera" onclick="takePhoto()">
                         📸 ถ่ายรูป
@@ -435,8 +391,10 @@
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
             
+            // แปลงเป็น base64
             currentPhoto = canvas.toDataURL('image/jpeg', 0.8);
             
+            // แสดงใน preview
             const preview = document.getElementById('photoPreview');
             preview.innerHTML = `<img src="${currentPhoto}" alt="Your photo">`;
             preview.classList.add('has-photo');
@@ -453,7 +411,8 @@
             }
             video.style.display = 'none';
             
-            const cameraBtns = document.getElementById('cameraButtons');
+            // เรียกคืนปุ่มเดิม
+            const cameraBtns = document.querySelector('.camera-buttons');
             cameraBtns.innerHTML = `
                 <button class="btn-camera" onclick="openCamera()">
                     📷 เปิดกล้อง
@@ -466,6 +425,7 @@
                 </button>
             `;
             
+            // ถ้ายังไม่มีรูป ให้แสดง placeholder
             if (!currentPhoto) {
                 const preview = document.getElementById('photoPreview');
                 preview.innerHTML = '<div class="placeholder-icon">📸</div>';
@@ -473,6 +433,7 @@
             }
         }
         
+        // อัปโหลดรูป
         function uploadPhoto() {
             document.getElementById('fileInput').click();
         }
@@ -490,7 +451,6 @@
                 };
                 reader.readAsDataURL(file);
             }
-            input.value = '';
         }
         
         function clearPhoto() {
@@ -502,6 +462,7 @@
             document.getElementById('resultSection').style.display = 'none';
             generatedImageUrl = null;
             
+            // ลบการเลือกธีม
             document.querySelectorAll('.theme-card').forEach(card => {
                 card.classList.remove('selected');
             });
@@ -509,14 +470,7 @@
             updateGenerateButton();
         }
         
-        function clearResult() {
-            document.getElementById('resultSection').style.display = 'none';
-            generatedImageUrl = null;
-            const preview = document.getElementById('photoPreview');
-            preview.style.opacity = '1';
-        }
-        
-        // สร้างภาพด้วย Hugging Face (ฟรี)
+        // สร้างภาพด้วย Gemini
         async function generateImage() {
             if (!currentPhoto || !selectedTheme) return;
             
@@ -524,13 +478,14 @@
             loading.style.display = 'flex';
             
             try {
-                // ใช้ Hugging Face FLUX.1-dev (ฟรี)
-                const response = await fetch('http://localhost:3000/api/generate-hf', {
+                // ส่งรูปและธีมไป backend
+                const response = await fetch('http://localhost:3001/api/generate-themed-image', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        image: currentPhoto,  // base64
                         theme: selectedTheme.name,
                         prompt: selectedTheme.prompt
                     })
@@ -538,16 +493,13 @@
                 
                 const data = await response.json();
                 
-                if (data.success && data.imageUrl) {
+                if (data.success) {
                     generatedImageUrl = data.imageUrl;
                     const resultImage = document.getElementById('resultImage');
                     resultImage.src = generatedImageUrl;
                     document.getElementById('resultSection').style.display = 'block';
-                    
-                    const preview = document.getElementById('photoPreview');
-                    preview.style.opacity = '0.5';
                 } else {
-                    alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถสร้างภาพได้'));
+                    alert('เกิดข้อผิดพลาด: ' + data.error);
                 }
             } catch (error) {
                 alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์: ' + error.message);
@@ -559,54 +511,31 @@
         function downloadImage() {
             if (generatedImageUrl) {
                 const link = document.createElement('a');
-                link.download = `ai-${selectedTheme?.name || 'theme'}-${Date.now()}.jpg`;
+                link.download = 'ai-themed-photo.jpg';
                 link.href = generatedImageUrl;
                 link.click();
             }
         }
         
-        async function shareImage() {
-            if (generatedImageUrl) {
-                try {
-                    const response = await fetch(generatedImageUrl);
-                    const blob = await response.blob();
-                    const file = new File([blob], 'ai-image.jpg', { type: 'image/jpeg' });
-                    
-                    if (navigator.share) {
-                        await navigator.share({
-                            title: 'AI Theme Changer',
-                            text: `ภาพธีม ${selectedTheme?.name} ที่สร้างด้วย AI (ฟรี)`,
-                            files: [file]
-                        });
-                    } else {
-                        alert('เบราว์เซอร์ของคุณไม่รองรับการแชร์ไฟล์');
-                    }
-                } catch (error) {
-                    console.error('Share error:', error);
-                }
-            }
-        }
-        
         // ตรวจสอบการเชื่อมต่อ server
-        async function checkServerStatus() {
-            const statusBadge = document.getElementById('statusBadge');
+        async function checkServer() {
             try {
-                const res = await fetch('http://localhost:3000/api/health');
+                const res = await fetch('http://localhost:3001/api/health');
                 const data = await res.json();
                 if (data.status === 'OK') {
-                    statusBadge.innerHTML = '🟢 เซิร์ฟเวอร์พร้อมใช้งาน | Hugging Face (ฟรี)';
-                    statusBadge.style.background = 'rgba(72, 187, 120, 0.3)';
+                    document.getElementById('statusBadge').innerHTML = '🟢 เชื่อมต่อเซิร์ฟเวอร์แล้ว';
+                    document.getElementById('statusBadge').style.background = '#c6f6d5';
                 }
             } catch (error) {
-                statusBadge.innerHTML = '🔴 ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์';
-                statusBadge.style.background = 'rgba(245, 101, 101, 0.3)';
+                document.getElementById('statusBadge').innerHTML = '🔴 ไม่เชื่อมต่อเซิร์ฟเวอร์';
+                document.getElementById('statusBadge').style.background = '#fed7d7';
             }
         }
         
         // เริ่มต้น
         createThemeButtons();
-        checkServerStatus();
-        setInterval(checkServerStatus, 5000);
+        checkServer();
+        setInterval(checkServer, 5000);
     </script>
 </body>
 </html>
