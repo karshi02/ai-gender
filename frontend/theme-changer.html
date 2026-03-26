@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -595,6 +595,630 @@
                 const data = await res.json();
                 if (data.status === 'OK') {
                     statusBadge.innerHTML = '🟢 เซิร์ฟเวอร์พร้อมใช้งาน | Hugging Face (ฟรี)';
+                    statusBadge.style.background = 'rgba(72, 187, 120, 0.3)';
+                }
+            } catch (error) {
+                statusBadge.innerHTML = '🔴 ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์';
+                statusBadge.style.background = 'rgba(245, 101, 101, 0.3)';
+            }
+        }
+        
+        // เริ่มต้น
+        createThemeButtons();
+        checkServerStatus();
+        setInterval(checkServerStatus, 5000);
+    </script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AI Theme Changer - เปลี่ยนชุดด้วย Leonardo.ai</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .free-badge {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            margin-left: 10px;
+        }
+        
+        .camera-section {
+            padding: 25px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .photo-preview {
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 20px;
+            border-radius: 20px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px dashed #ddd;
+            transition: all 0.3s;
+        }
+        
+        .photo-preview.has-photo {
+            border: 3px solid #667eea;
+        }
+        
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .placeholder-icon {
+            font-size: 50px;
+            color: #ccc;
+        }
+        
+        .camera-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-camera {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-camera:hover {
+            transform: translateY(-2px);
+            background: #5a67d8;
+        }
+        
+        .btn-camera.secondary {
+            background: #48bb78;
+        }
+        
+        .btn-camera.danger {
+            background: #f56565;
+        }
+        
+        .theme-section {
+            padding: 25px;
+        }
+        
+        .theme-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .theme-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .theme-card:hover {
+            transform: translateY(-3px);
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+        
+        .theme-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.3);
+        }
+        
+        .theme-emoji {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .theme-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            padding: 25px;
+            background: #f7fafc;
+            border-top: 1px solid #eee;
+        }
+        
+        .result-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .result-image {
+            width: 100%;
+            border-radius: 20px;
+            margin-top: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+        }
+        
+        .info-note {
+            background: #fef5e7;
+            border-left: 4px solid #f39c12;
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .credit-info {
+            background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+            border: 1px solid #667eea30;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            color: #667eea;
+        }
+        
+        @media (max-width: 500px) {
+            .theme-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 AI Theme Changer</h1>
+            <p>ถ่ายรูปหน้า แล้วเลือกธีมที่ต้องการ <span class="free-badge">Leonardo.ai</span></p>
+            <div class="status-badge" id="statusBadge">🟢 กำลังเชื่อมต่อ...</div>
+        </div>
+        
+        <div class="camera-section">
+            <div class="photo-preview" id="photoPreview">
+                <div class="placeholder-icon">📸</div>
+            </div>
+            
+            <div class="camera-buttons" id="cameraButtons">
+                <button class="btn-camera" onclick="openCamera()">
+                    📷 เปิดกล้อง
+                </button>
+                <button class="btn-camera secondary" onclick="uploadPhoto()">
+                    📁 อัปโหลดรูป
+                </button>
+                <button class="btn-camera danger" onclick="clearPhoto()">
+                    🗑️ ล้างรูป
+                </button>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(this)">
+            <video id="video" style="display: none" autoplay playsinline></video>
+            <canvas id="canvas" style="display: none"></canvas>
+        </div>
+        
+        <div class="theme-section">
+            <h3>🎨 เลือกธีมที่ต้องการ</h3>
+            <div class="theme-grid" id="themeGrid"></div>
+            
+            <button class="generate-btn" id="generateBtn" onclick="generateImage()" disabled>
+                ✨ สร้างภาพด้วย Leonardo.ai
+            </button>
+            
+            <div class="info-note">
+                💡 <strong>Leonardo.ai:</strong> ใช้ API คุณภาพสูง (เครดิต $5 ฟรี) 
+                • สร้างภาพสวยคมชัด • ใช้เวลาประมาณ 10-20 วินาที
+            </div>
+            <div class="credit-info">
+                🎨 Leonardo.ai - คุณภาพระดับโปร | ใช้เครดิตฟรี $5
+            </div>
+        </div>
+        
+        <div class="result-section" id="resultSection" style="display: none;">
+            <h3>🎉 ผลลัพธ์</h3>
+            <img id="resultImage" class="result-image" alt="Generated image">
+            <div class="button-group">
+                <button class="btn-camera secondary" onclick="downloadImage()">💾 ดาวน์โหลด</button>
+                <button class="btn-camera" onclick="shareImage()">📤 แชร์</button>
+                <button class="btn-camera danger" onclick="clearResult()">🗑️ ล้างผลลัพธ์</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="loadingOverlay" style="display: none;" class="loading-overlay">
+        <div class="spinner"></div>
+        <div>🎨 กำลังสร้างภาพด้วย Leonardo.ai...</div>
+        <div style="font-size: 12px; opacity: 0.7;">Leonardo AI กำลังสร้างภาพคุณภาพสูง กรุณารอสักครู่</div>
+        <div style="font-size: 10px; opacity: 0.5; margin-top: 10px;">⏱️ ใช้เวลาประมาณ 10-20 วินาที</div>
+    </div>
+
+    <script>
+        // ธีมต่างๆ
+        const themes = [
+            { name: "นักบินอวกาศ", emoji: "👨‍🚀", prompt: "astronaut in futuristic space suit, helmet, space background, stars, high quality" },
+            { name: "ซูเปอร์ฮีโร่", emoji: "🦸", prompt: "superhero with cape, mask, heroic pose, city background, cinematic lighting" },
+            { name: "เจ้าหญิง", emoji: "👸", prompt: "princess with elegant dress, crown, magical castle background, fantasy" },
+            { name: "ซามูไร", emoji: "⚔️", prompt: "samurai with traditional armor, katana, Japanese temple background, epic" },
+            { name: "เอเลี่ยน", emoji: "👽", prompt: "alien creature, sci-fi, futuristic spaceship background, detailed" },
+            { name: "โจรสลัด", emoji: "🏴‍☠️", prompt: "pirate with hat, eyepatch, pirate ship, ocean background, adventure" },
+            { name: "ไซเบอร์พังค์", emoji: "🤖", prompt: "cyberpunk style, neon lights, futuristic city, high tech, glowing" },
+            { name: "เวทมนตร์", emoji: "🧙", prompt: "wizard with magical robe, staff, glowing magic, fantasy background" },
+            { name: "ราชา", emoji: "👑", prompt: "king with royal robe, crown, golden throne, palace background" },
+            { name: "นินจา", emoji: "🥷", prompt: "ninja in black outfit, mask, Japanese night background, stealth" },
+            { name: "ยุค 80", emoji: "🕺", prompt: "80s style, colorful retro outfit, neon, disco background, vibrant" },
+            { name: "สโนว์บอร์ด", emoji: "🏂", prompt: "cool snowboarder, winter gear, snowy mountain background, action" }
+        ];
+        
+        let currentPhoto = null;
+        let selectedTheme = null;
+        let generatedImageUrl = null;
+        
+        // สร้างปุ่มธีม
+        function createThemeButtons() {
+            const grid = document.getElementById('themeGrid');
+            grid.innerHTML = themes.map((theme, index) => `
+                <div class="theme-card" onclick="selectTheme(${index})" data-theme="${index}">
+                    <div class="theme-emoji">${theme.emoji}</div>
+                    <div class="theme-name">${theme.name}</div>
+                </div>
+            `).join('');
+        }
+        
+        function selectTheme(index) {
+            selectedTheme = themes[index];
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`.theme-card[data-theme="${index}"]`).classList.add('selected');
+            updateGenerateButton();
+        }
+        
+        function updateGenerateButton() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = !(currentPhoto && selectedTheme);
+            if (currentPhoto && selectedTheme) {
+                btn.textContent = `✨ สร้างภาพธีม ${selectedTheme.name} (Leonardo.ai)`;
+            } else if (!currentPhoto) {
+                btn.textContent = `📸 กรุณาถ่ายรูปก่อน`;
+            } else if (!selectedTheme) {
+                btn.textContent = `🎨 กรุณาเลือกธีม`;
+            }
+        }
+        
+        // เปิดกล้อง
+        async function openCamera() {
+            try {
+                const video = document.getElementById('video');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = '';
+                preview.appendChild(video);
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'cover';
+                
+                const cameraBtns = document.getElementById('cameraButtons');
+                cameraBtns.innerHTML = `
+                    <button class="btn-camera" onclick="takePhoto()">
+                        📸 ถ่ายรูป
+                    </button>
+                    <button class="btn-camera danger" onclick="closeCamera()">
+                        ❌ ยกเลิก
+                    </button>
+                `;
+                
+                window.currentStream = stream;
+            } catch (error) {
+                alert('ไม่สามารถเปิดกล้องได้: ' + error.message);
+            }
+        }
+        
+        function takePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            currentPhoto = canvas.toDataURL('image/jpeg', 0.8);
+            
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = `<img src="${currentPhoto}" alt="Your photo">`;
+            preview.classList.add('has-photo');
+            
+            closeCamera();
+            updateGenerateButton();
+        }
+        
+        function closeCamera() {
+            const video = document.getElementById('video');
+            if (window.currentStream) {
+                window.currentStream.getTracks().forEach(track => track.stop());
+                window.currentStream = null;
+            }
+            video.style.display = 'none';
+            
+            const cameraBtns = document.getElementById('cameraButtons');
+            cameraBtns.innerHTML = `
+                <button class="btn-camera" onclick="openCamera()">
+                    📷 เปิดกล้อง
+                </button>
+                <button class="btn-camera secondary" onclick="uploadPhoto()">
+                    📁 อัปโหลดรูป
+                </button>
+                <button class="btn-camera danger" onclick="clearPhoto()">
+                    🗑️ ล้างรูป
+                </button>
+            `;
+            
+            if (!currentPhoto) {
+                const preview = document.getElementById('photoPreview');
+                preview.innerHTML = '<div class="placeholder-icon">📸</div>';
+                preview.classList.remove('has-photo');
+            }
+        }
+        
+        function uploadPhoto() {
+            document.getElementById('fileInput').click();
+        }
+        
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentPhoto = e.target.result;
+                    const preview = document.getElementById('photoPreview');
+                    preview.innerHTML = `<img src="${currentPhoto}" alt="Your photo">`;
+                    preview.classList.add('has-photo');
+                    updateGenerateButton();
+                };
+                reader.readAsDataURL(file);
+            }
+            input.value = '';
+        }
+        
+        function clearPhoto() {
+            currentPhoto = null;
+            selectedTheme = null;
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '<div class="placeholder-icon">📸</div>';
+            preview.classList.remove('has-photo');
+            document.getElementById('resultSection').style.display = 'none';
+            generatedImageUrl = null;
+            
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            updateGenerateButton();
+        }
+        
+        function clearResult() {
+            document.getElementById('resultSection').style.display = 'none';
+            generatedImageUrl = null;
+            const preview = document.getElementById('photoPreview');
+            preview.style.opacity = '1';
+        }
+        
+        // สร้างภาพด้วย Leonardo.ai
+        async function generateImage() {
+            if (!currentPhoto || !selectedTheme) return;
+            
+            const loading = document.getElementById('loadingOverlay');
+            loading.style.display = 'flex';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/generate-leonardo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        theme: selectedTheme.name,
+                        prompt: selectedTheme.prompt
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.imageUrl) {
+                    generatedImageUrl = data.imageUrl;
+                    const resultImage = document.getElementById('resultImage');
+                    resultImage.src = generatedImageUrl;
+                    document.getElementById('resultSection').style.display = 'block';
+                    
+                    const preview = document.getElementById('photoPreview');
+                    preview.style.opacity = '0.5';
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถสร้างภาพได้'));
+                }
+            } catch (error) {
+                alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์: ' + error.message + '\n\nกรุณาตรวจสอบว่าเซิร์ฟเวอร์กำลังทำงานอยู่');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function downloadImage() {
+            if (generatedImageUrl) {
+                const link = document.createElement('a');
+                link.download = `ai-${selectedTheme?.name || 'theme'}-${Date.now()}.jpg`;
+                link.href = generatedImageUrl;
+                link.click();
+            }
+        }
+        
+        async function shareImage() {
+            if (generatedImageUrl) {
+                try {
+                    const response = await fetch(generatedImageUrl);
+                    const blob = await response.blob();
+                    const file = new File([blob], 'ai-image.jpg', { type: 'image/jpeg' });
+                    
+                    if (navigator.share) {
+                        await navigator.share({
+                            title: 'AI Theme Changer',
+                            text: `ภาพธีม ${selectedTheme?.name} ที่สร้างด้วย Leonardo.ai`,
+                            files: [file]
+                        });
+                    } else {
+                        alert('เบราว์เซอร์ของคุณไม่รองรับการแชร์ไฟล์');
+                    }
+                } catch (error) {
+                    console.error('Share error:', error);
+                }
+            }
+        }
+        
+        // ตรวจสอบการเชื่อมต่อ server
+        async function checkServerStatus() {
+            const statusBadge = document.getElementById('statusBadge');
+            try {
+                const res = await fetch('http://localhost:3000/api/health');
+                const data = await res.json();
+                if (data.status === 'OK') {
+                    statusBadge.innerHTML = '🟢 เซิร์ฟเวอร์พร้อมใช้งาน | Leonardo.ai (คุณภาพสูง)';
                     statusBadge.style.background = 'rgba(72, 187, 120, 0.3)';
                 }
             } catch (error) {

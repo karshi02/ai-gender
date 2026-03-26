@@ -1,392 +1,3 @@
-// // backend/server.js
-
-// const path = require('path');
-// require('dotenv').config({ path: path.join(__dirname, '.env') });
-
-// const express = require('express');
-// const cors = require('cors');
-// const multer = require('multer');
-// const fs = require('fs');
-
-// // ✅ เพิ่ม import Replicate
-// const Replicate = require('replicate');
-
-// const app = express();
-// const PORT = process.env.PORT || 3000;
-
-// // Middleware
-// app.use(cors());
-// app.use(express.json({ limit: '50mb' }));
-// app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// // ========== ตั้งค่า multer (ต้องมีก่อนใช้ upload) ==========
-
-// สร้างโฟลเดอร์ uploads
-// const uploadDir = path.join(__dirname, '../uploads');
-// if (!fs.existsSync(uploadDir)) {
-//     fs.mkdirSync(uploadDir, { recursive: true });
-// }
-
-// // ตั้งค่า storage สำหรับ multer
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, uploadDir);
-//     },
-//     filename: (req, file, cb) => {
-//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-//         cb(null, uniqueSuffix + path.extname(file.originalname));
-//     }
-// });
-
-// // ✅ สร้าง upload object (ต้องประกาศก่อนใช้งาน)
-// const upload = multer({ 
-//     storage: storage,
-//     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-//     fileFilter: (req, file, cb) => {
-//         const allowedTypes = /jpeg|jpg|png|gif|webp/;
-//         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-//         const mimetype = allowedTypes.test(file.mimetype);
-        
-//         if (mimetype && extname) {
-//             return cb(null, true);
-//         } else {
-//             cb(new Error('เฉพาะไฟล์รูปภาพเท่านั้น'));
-//         }
-//     }
-// });
-
-// // ========== API Endpoints ==========
-
-// // Root path
-// app.get('/', (req, res) => {
-//     res.json({
-//         name: 'AI Gender Detection System API',
-//         version: '1.0.0',
-//         status: 'running',
-//         port: PORT,
-//         endpoints: {
-//             health: 'GET /api/health',
-//             chat: 'POST /api/chat',
-//             models: 'GET /api/models',
-//             upload: 'POST /api/upload',
-//             generateFlux: 'POST /api/generate-flux',
-//             generateReplicate: 'POST /api/generate-with-replicate',
-//             generateTheme: 'POST /api/generate-themed-image',
-//             uploads: 'GET /uploads/:filename'
-//         },
-//         gemini_api: process.env.GEMINI_API_KEY ? '✅ configured' : '❌ not configured',
-//         replicate_api: process.env.REPLICATE_API_TOKEN ? '✅ configured' : '❌ not configured'
-//     });
-// });
-
-// // Health check
-// app.get('/api/health', (req, res) => {
-//     res.json({ status: 'OK', message: 'Server is running', timestamp: new Date().toISOString() });
-// });
-
-// // 📋 ดูรายการโมเดลที่รองรับ
-// app.get('/api/models', async (req, res) => {
-//     try {
-//         const API_KEY = process.env.GEMINI_API_KEY;
-//         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
-//         const data = await response.json();
-        
-//         const supportedModels = data.models?.filter(model => 
-//             model.supportedGenerationMethods?.includes('generateContent')
-//         ).map(model => ({
-//             name: model.name,
-//             displayName: model.displayName,
-//             description: model.description,
-//             version: model.version
-//         }));
-        
-//         res.json({ 
-//             models: supportedModels,
-//             total: supportedModels?.length || 0
-//         });
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
-// // Chat with Gemini
-// app.post('/api/chat', async (req, res) => {
-//     try {
-//         const { message } = req.body;
-        
-//         if (!message) {
-//             return res.status(400).json({ error: 'กรุณาส่งข้อความด้วย' });
-//         }
-
-//         const API_KEY = process.env.GEMINI_API_KEY;
-        
-//         if (!API_KEY) {
-//             return res.status(500).json({ error: 'ไม่พบ GEMINI_API_KEY ใน .env' });
-//         }
-
-//         const MODEL_NAME = 'models/gemini-2.5-flash-lite';
-//         const API_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-
-//         console.log(`📡 Calling Gemini API with model: ${MODEL_NAME}`);
-//         console.log(`📝 Message: ${message.substring(0, 50)}...`);
-
-//         const response = await fetch(API_URL, {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify({
-//                 contents: [{ parts: [{ text: message }] }]
-//             })
-//         });
-
-//         if (!response.ok) {
-//             const errorData = await response.json();
-//             console.error('API Error:', errorData);
-            
-//             if (response.status === 429 || errorData.error?.message?.includes('quota')) {
-//                 const errorMsg = errorData.error?.message || '';
-//                 const match = errorMsg.match(/retry in (\d+\.?\d*)s/);
-//                 const waitTime = match ? parseFloat(match[1]) : 60;
-                
-//                 throw new Error(`Quota หมด กรุณารอ ${Math.ceil(waitTime)} วินาที หรือลองใหม่พรุ่งนี้`);
-//             }
-            
-//             throw new Error(errorData.error?.message || `API error: ${response.status}`);
-//         }
-
-//         const data = await response.json();
-//         const reply = data.candidates[0].content.parts[0].text;
-
-//         res.json({ success: true, reply, model: MODEL_NAME });
-        
-//     } catch (error) {
-//         console.error('Gemini API Error:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
-// // Upload image (ใช้ upload ที่ประกาศไว้)
-// app.post('/api/upload', upload.single('image'), (req, res) => {
-//     try {
-//         if (!req.file) {
-//             return res.status(400).json({ error: 'ไม่พบไฟล์รูปภาพ' });
-//         }
-        
-//         const imagePath = `/uploads/${req.file.filename}`;
-//         res.json({ 
-//             success: true, 
-//             filename: req.file.filename,
-//             path: imagePath,
-//             message: 'อัปโหลดรูปสำเร็จ'
-//         });
-//     } catch (error) {
-//         console.error('Upload error:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
-// // 🚀 ใช้ Flux Schnell (เร็ว คุณภาพดี)
-// app.post('/api/generate-flux', async (req, res) => {
-//     try {
-//         const { theme, prompt } = req.body;
-        
-//         if (!theme) {
-//             return res.status(400).json({ error: 'กรุณาเลือกธีม' });
-//         }
-        
-//         const REPLICATE_TOKEN = process.env.REPLICATE_API_TOKEN;
-        
-//         if (!REPLICATE_TOKEN) {
-//             return res.status(500).json({ error: 'ไม่พบ REPLICATE_API_TOKEN ใน .env กรุณาสมัครที่ replicate.com' });
-//         }
-        
-//         console.log(`🚀 Generating with Flux: ${theme}`);
-        
-//         const replicate = new Replicate({ auth: REPLICATE_TOKEN });
-        
-//         const imagePrompt = `A professional photo of a person dressed as ${theme} (${prompt || theme}), high quality, detailed, photorealistic, studio lighting, 4k, sharp focus`;
-        
-//         const output = await replicate.run(
-//             "black-forest-labs/flux-schnell",
-//             {
-//                 input: {
-//                     prompt: imagePrompt,
-//                     go_fast: true,
-//                     width: 768,
-//                     height: 768,
-//                     num_outputs: 1,
-//                 }
-//             }
-//         );
-        
-//         console.log(`✅ Flux generated: ${theme}`);
-        
-//         if (output && output[0]) {
-//             res.json({ success: true, imageUrl: output[0] });
-//         } else {
-//             throw new Error('ไม่ได้รับ URL รูปจาก Replicate');
-//         }
-        
-//     } catch (error) {
-//         console.error('Flux error:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
-// // 🎨 สร้างภาพด้วย Replicate (Stable Diffusion - fallback)
-// app.post('/api/generate-with-replicate', async (req, res) => {
-//     try {
-//         const { theme, prompt } = req.body;
-        
-//         if (!theme) {
-//             return res.status(400).json({ error: 'กรุณาเลือกธีม' });
-//         }
-        
-//         const REPLICATE_TOKEN = process.env.REPLICATE_API_TOKEN;
-        
-//         if (!REPLICATE_TOKEN) {
-//             return res.status(500).json({ error: 'ไม่พบ REPLICATE_API_TOKEN ใน .env' });
-//         }
-        
-//         console.log(`🎨 Generating with Stable Diffusion: ${theme}`);
-        
-//         const replicate = new Replicate({ auth: REPLICATE_TOKEN });
-        
-//         const imagePrompt = `A professional photo of a person dressed as ${theme} (${prompt || theme}). High quality, detailed, photorealistic.`;
-        
-//         const output = await replicate.run(
-//             "stability-ai/stable-diffusion-3.5-large",
-//             {
-//                 input: {
-//                     prompt: imagePrompt,
-//                     negative_prompt: "deformed, blurry, bad anatomy, disfigured, ugly",
-//                     width: 768,
-//                     height: 768,
-//                     num_outputs: 1,
-//                     num_inference_steps: 28,
-//                     guidance_scale: 7.5,
-//                 }
-//             }
-//         );
-        
-//         console.log(`✅ Generated image for theme: ${theme}`);
-        
-//         if (output && output[0]) {
-//             res.json({ success: true, imageUrl: output[0] });
-//         } else {
-//             throw new Error('ไม่ได้รับ URL รูปจาก Replicate');
-//         }
-        
-//     } catch (error) {
-//         console.error('Replicate error:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
-// // 🎨 สร้างภาพตามธีม (Gemini - fallback)
-// app.post('/api/generate-themed-image', async (req, res) => {
-//     try {
-//         const { image, theme, prompt } = req.body;
-        
-//         if (!image || !theme) {
-//             return res.status(400).json({ error: 'กรุณาส่งรูปและธีม' });
-//         }
-        
-//         const API_KEY = process.env.GEMINI_API_KEY;
-        
-//         if (!API_KEY) {
-//             return res.status(500).json({ error: 'ไม่พบ GEMINI_API_KEY' });
-//         }
-        
-//         console.log(`🎨 Generating with Gemini: ${theme}`);
-        
-//         const MODEL_NAME = 'models/gemini-3-pro-image-preview';
-//         const API_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-        
-//         const imagePrompt = `Transform this person to look like a ${theme} (${prompt}).
-// Keep the face and hair exactly the same.
-// Change outfit, accessories, and background to match the theme.
-// Make it look natural and photorealistic.`;
-        
-//         const base64Data = image.split(',')[1] || image;
-        
-//         const requestBody = {
-//             contents: [{
-//                 parts: [
-//                     { text: imagePrompt },
-//                     {
-//                         inline_data: {
-//                             mime_type: "image/jpeg",
-//                             data: base64Data
-//                         }
-//                     }
-//                 ]
-//             }]
-//         };
-        
-//         const response = await fetch(API_URL, {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify(requestBody)
-//         });
-        
-//         if (!response.ok) {
-//             const errorData = await response.json();
-//             throw new Error(errorData.error?.message || 'API error');
-//         }
-        
-//         const data = await response.json();
-        
-//         let generatedImage = null;
-        
-//         if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-//             const parts = data.candidates[0].content.parts;
-//             for (const part of parts) {
-//                 if (part.inline_data && part.inline_data.data) {
-//                     generatedImage = `data:${part.inline_data.mime_type || 'image/png'};base64,${part.inline_data.data}`;
-//                     break;
-//                 }
-//             }
-//         }
-        
-//         if (generatedImage) {
-//             res.json({ success: true, imageUrl: generatedImage });
-//         } else {
-//             throw new Error('ไม่ได้รับรูปจาก Gemini');
-//         }
-        
-//     } catch (error) {
-//         console.error('Gemini generate error:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
-// // Serve uploaded files
-// app.use('/uploads', express.static(uploadDir));
-
-// // 404 handler (ต้องอยู่ท้ายสุด)
-// app.use((req, res) => {
-//     res.status(404).json({ error: 'ไม่พบ API ที่ร้องขอ', path: req.originalUrl });
-// });
-
-// // Error handler
-// app.use((err, req, res, next) => {
-//     console.error('Server error:', err);
-//     res.status(500).json({ error: err.message || 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' });
-// });
-
-// // Start server
-// app.listen(PORT, () => {
-//     console.log(`✅ Server running on http://localhost:${PORT}`);
-//     console.log(`📁 Upload folder: ${uploadDir}`);
-//     console.log(`🔑 Gemini API Key: ${process.env.GEMINI_API_KEY ? '✓ พบ' : '✗ ไม่พบ'}`);
-//     console.log(`🎨 Replicate API Key: ${process.env.REPLICATE_API_TOKEN ? '✓ พบ' : '✗ ไม่พบ'}`);
-//     console.log(`🚀 Endpoints ready:`);
-//     console.log(`   - /api/generate-flux (Flux Schnell - เร็ว)`);
-//     console.log(`   - /api/generate-with-replicate (Stable Diffusion)`);
-//     console.log(`🌐 เปิดเว็บ: http://localhost:${PORT}`);
-// });
-// backend/server.js - เพิ่ม Hugging Face endpoint
-
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -441,7 +52,7 @@ const upload = multer({
 
 // ========== API Endpoints ==========
 
-// Root path - เปิดหน้า theme-changer.html
+// Root path
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/theme-changer.html'));
 });
@@ -449,86 +60,6 @@ app.get('/', (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'Server is running', timestamp: new Date().toISOString() });
-});
-
-// 📋 ดูรายการโมเดลที่รองรับ
-app.get('/api/models', async (req, res) => {
-    try {
-        const API_KEY = process.env.GEMINI_API_KEY;
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
-        const data = await response.json();
-        
-        const supportedModels = data.models?.filter(model => 
-            model.supportedGenerationMethods?.includes('generateContent')
-        ).map(model => ({
-            name: model.name,
-            displayName: model.displayName,
-            description: model.description,
-            version: model.version
-        }));
-        
-        res.json({ 
-            models: supportedModels,
-            total: supportedModels?.length || 0
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Chat with Gemini
-app.post('/api/chat', async (req, res) => {
-    try {
-        const { message } = req.body;
-        
-        if (!message) {
-            return res.status(400).json({ error: 'กรุณาส่งข้อความด้วย' });
-        }
-
-        const API_KEY = process.env.GEMINI_API_KEY;
-        
-        if (!API_KEY) {
-            return res.status(500).json({ error: 'ไม่พบ GEMINI_API_KEY ใน .env' });
-        }
-
-        const MODEL_NAME = 'models/gemini-2.5-flash-lite';
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-
-        console.log(`📡 Calling Gemini API with model: ${MODEL_NAME}`);
-        console.log(`📝 Message: ${message.substring(0, 50)}...`);
-
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: message }] }]
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('API Error:', errorData);
-            
-            if (response.status === 429 || errorData.error?.message?.includes('quota')) {
-                const errorMsg = errorData.error?.message || '';
-                const match = errorMsg.match(/retry in (\d+\.?\d*)s/);
-                const waitTime = match ? parseFloat(match[1]) : 60;
-                
-                throw new Error(`Quota หมด กรุณารอ ${Math.ceil(waitTime)} วินาที หรือลองใหม่พรุ่งนี้`);
-            }
-            
-            throw new Error(errorData.error?.message || `API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const reply = data.candidates[0].content.parts[0].text;
-
-        res.json({ success: true, reply, model: MODEL_NAME });
-        
-    } catch (error) {
-        console.error('Gemini API Error:', error);
-        res.status(500).json({ error: error.message });
-    }
 });
 
 // Upload image
@@ -551,77 +82,8 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     }
 });
 
-// 🆓 ใช้ Hugging Face (ฟรี) - FLUX.1-dev (คุณภาพดี)
-// app.post('/api/generate-hf', async (req, res) => {
-//     try {
-//         const { theme, prompt } = req.body;
-        
-//         if (!theme) {
-//             return res.status(400).json({ error: 'กรุณาเลือกธีม' });
-//         }
-        
-//         const HF_TOKEN = process.env.HF_TOKEN;
-        
-//         if (!HF_TOKEN) {
-//             return res.status(500).json({ error: 'ไม่พบ HF_TOKEN ใน .env กรุณาสมัครที่ huggingface.co' });
-//         }
-        
-//         console.log(`🆓 Generating with Hugging Face FLUX.1-dev: ${theme}`);
-        
-//         // สร้าง prompt ที่ละเอียดขึ้น
-//         const imagePrompt = `A professional high-quality photo of a person dressed as ${theme} (${prompt || theme}). 
-// Detailed, photorealistic, studio lighting, 4k, sharp focus, beautiful, cinematic lighting.`;
-        
-//         const response = await fetch(
-//             // "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev",
-//             "https://router.huggingface.co/models/black-forest-labs/FLUX.1-dev",
-//             {
-//                 headers: { 
-//                     Authorization: `Bearer ${HF_TOKEN}`,
-//                     "Content-Type": "application/json"
-//                 },
-//                 method: "POST",
-//                 body: JSON.stringify({
-//                     inputs: imagePrompt,
-//                     parameters: {
-//                         num_inference_steps: 28,
-//                         guidance_scale: 7.5,
-//                         width: 768,
-//                         height: 768,
-//                     }
-//                 }),
-//             }
-//         );
-        
-//         if (!response.ok) {
-//             const errorText = await response.text();
-//             console.error('HF API Error:', errorText);
-            
-//             if (response.status === 503) {
-//                 throw new Error('⏳ โมเดลกำลังโหลด กรุณาลองใหม่อีกครั้งใน 30 วินาที (Hugging Face ต้องใช้เวลาโหลดโมเดลครั้งแรก)');
-//             }
-//             throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
-//         }
-        
-//         const imageBuffer = await response.arrayBuffer();
-//         const base64Image = Buffer.from(imageBuffer).toString('base64');
-//         const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-        
-//         console.log(`✅ Hugging Face generated: ${theme}`);
-        
-//         res.json({ 
-//             success: true, 
-//             imageUrl: imageUrl,
-//             message: `✨ สร้างภาพธีม ${theme} สำเร็จ! (Hugging Face - ฟรี)`
-//         });
-        
-//     } catch (error) {
-//         console.error('Hugging Face error:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-    // 🆓 ใช้ Hugging Face (ฟรี) - FLUX.1-dev ผ่าน API อินเฟอร์เรนซ์ใหม่
-app.post('/api/generate-hf', async (req, res) => {
+// 🎨 ใช้ Leonardo.ai (คุณภาพสูง ใช้เครดิต $5 ฟรี)
+app.post('/api/generate-leonardo', async (req, res) => {
     try {
         const { theme, prompt } = req.body;
         
@@ -629,247 +91,100 @@ app.post('/api/generate-hf', async (req, res) => {
             return res.status(400).json({ error: 'กรุณาเลือกธีม' });
         }
         
-        const HF_TOKEN = process.env.HF_TOKEN;
+        const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY;
         
-        if (!HF_TOKEN) {
-            return res.status(500).json({ error: 'ไม่พบ HF_TOKEN ใน .env กรุณาสมัครที่ huggingface.co' });
+        if (!LEONARDO_API_KEY) {
+            return res.status(500).json({ error: 'ไม่พบ LEONARDO_API_KEY ใน .env กรุณาใส่ API key จาก Leonardo.ai' });
         }
         
-        console.log(`🆓 Generating with Hugging Face: ${theme}`);
+        console.log(`🎨 Generating with Leonardo.ai: ${theme}`);
         
-        // สร้าง prompt
         const imagePrompt = `A professional high-quality photo of a person dressed as ${theme} (${prompt || theme}). 
 Detailed, photorealistic, studio lighting, 4k, sharp focus, beautiful, cinematic lighting.`;
         
-        // ใช้ API Inference Endpoint ใหม่ (router.huggingface.co)
-        // โมเดลสามารถตั้งจาก env HF_MODEL หรือใช้ค่าเริ่มต้น
-        const DEFAULT_HF_MODEL = 'runwayml/stable-diffusion-v1-5';
-        const HF_MODEL = process.env.HF_MODEL || DEFAULT_HF_MODEL;
-        let API_URL = `https://router.huggingface.co/models/${HF_MODEL}`;
-
-        console.log(`📡 Calling Hugging Face API for model ${HF_MODEL}...`);
-
-        let response = await fetch(API_URL, {
+        // ลองใช้ modelId ใหม่ (Kino XL - โมเดลล่าสุดของ Leonardo)
+        // หรือไม่ใส่ modelId ให้ Leonardo เลือกเอง
+        const generateResponse = await fetch('https://api.leonardo.ai/v1/generations', {
             method: 'POST',
-            headers: { 
-                Authorization: `Bearer ${HF_TOKEN}`,
-                "Content-Type": "application/json"
+            headers: {
+                'Authorization': `Bearer ${LEONARDO_API_KEY}`,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                inputs: imagePrompt,
-                parameters: {
-                    num_inference_steps: 20,
-                    guidance_scale: 7,
-                    width: 512,
-                    height: 512,
-                }
-            }),
-        });
-
-        console.log(`📡 Response status: ${response.status}`);
-
-        // If model not found (404), try a short list of public fallback models
-        if (response.status === 404) {
-            const fallbackModels = [
-                'stabilityai/stable-diffusion-2',
-                'stabilityai/stable-diffusion-2-1',
-                'CompVis/stable-diffusion-v1-4'
-            ];
-
-            const originalError = await response.text().catch(() => '');
-            console.warn(`HF model ${HF_MODEL} returned 404. Trying fallbacks... (${originalError.substring(0,200)})`);
-
-            for (const fb of fallbackModels) {
-                try {
-                    const fbUrl = `https://router.huggingface.co/models/${fb}`;
-                    console.log(`📡 Trying fallback model: ${fb}`);
-                    const fbResp = await fetch(fbUrl, {
-                        method: 'POST',
-                        headers: { Authorization: `Bearer ${HF_TOKEN}`, "Content-Type": "application/json" },
-                        body: JSON.stringify({ inputs: imagePrompt, parameters: { num_inference_steps: 20, guidance_scale: 7 } }),
-                    });
-
-                    if (fbResp.ok) {
-                        response = fbResp;
-                        API_URL = fbUrl;
-                        console.log(`✅ Fallback model ${fb} succeeded.`);
-                        break;
-                    } else {
-                        const txt = await fbResp.text().catch(() => '');
-                        console.warn(`Fallback ${fb} returned ${fbResp.status}: ${txt.substring(0,200)}`);
-                    }
-                } catch (e) {
-                    console.warn(`Error trying fallback ${fb}:`, e.message || e);
-                }
-            }
-        }
-
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => '');
-            console.error('HF API Error:', errorText);
-
-            if (response.status === 401) {
-                throw new Error('HF_TOKEN ไม่ถูกต้อง กรุณาตรวจสอบ token');
-            }
-            if (response.status === 503) {
-                throw new Error('⏳ โมเดลกำลังโหลด กรุณาลองใหม่อีกครั้งใน 30 วินาที');
-            }
-            if (response.status === 404) {
-                throw new Error(`Hugging Face model not found (tried ${HF_MODEL} and fallbacks). ตรวจสอบ model ID หรือสิทธิ์การเข้าถึง.`);
-            }
-            throw new Error(`Hugging Face API error: ${response.status} - ${errorText.substring(0, 200)}`);
-        }
-
-        const imageBuffer = await response.arrayBuffer();
-        const base64Image = Buffer.from(imageBuffer).toString('base64');
-        const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-        
-        console.log(`✅ Hugging Face generated: ${theme}`);
-        
-        res.json({ 
-            success: true, 
-            imageUrl: imageUrl,
-            message: `✨ สร้างภาพธีม ${theme} สำเร็จ! (Hugging Face - ฟรี)`
+                // ไม่ใส่ modelId ให้ใช้ default
+                prompt: imagePrompt,
+                negative_prompt: 'deformed, blurry, bad anatomy, disfigured, ugly, low quality',
+                width: 768,
+                height: 768,
+                num_images: 1,
+                guidance_scale: 7,
+                num_inference_steps: 30
+            })
         });
         
-    } catch (error) {
-        console.error('Hugging Face error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 🆓 ใช้ Stable Diffusion v1.5 บน Hugging Face (เร็วขึ้น)
-app.post('/api/generate-hf-sd', async (req, res) => {
-    try {
-        const { theme, prompt } = req.body;
-        
-        if (!theme) {
-            return res.status(400).json({ error: 'กรุณาเลือกธีม' });
+        if (!generateResponse.ok) {
+            const errorData = await generateResponse.text();
+            console.error('Leonardo API Error:', errorData);
+            
+            if (generateResponse.status === 401) {
+                throw new Error('LEONARDO_API_KEY ไม่ถูกต้อง กรุณาตรวจสอบ');
+            }
+            if (generateResponse.status === 429) {
+                throw new Error('เครดิตไม่พอ หรือส่งคำขอ太多 กรุณาลองใหม่ภายหลัง');
+            }
+            throw new Error(`Leonardo API error: ${generateResponse.status}`);
         }
         
-        const HF_TOKEN = process.env.HF_TOKEN;
+        const generateData = await generateResponse.json();
+        const generationId = generateData.sdGenerationJob.generationId;
         
-        if (!HF_TOKEN) {
-            return res.status(500).json({ error: 'ไม่พบ HF_TOKEN ใน .env' });
-        }
+        console.log(`📡 Generation ID: ${generationId}, waiting for result...`);
         
-        console.log(`🆓 Generating with Stable Diffusion (HF): ${theme}`);
+        let imageUrl = null;
+        let attempts = 0;
+        const maxAttempts = 30;
         
-        const imagePrompt = `A professional photo of a person dressed as ${theme} (${prompt || theme}), high quality, detailed, photorealistic`;
-        
-        const response = await fetch(
-            // "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
-            "https://router.huggingface.co/models/runwayml/stable-diffusion-v1-5",
-            {
+        while (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const resultResponse = await fetch(`https://api.leonardo.ai/v1/generations/${generationId}`, {
                 headers: { 
-                    Authorization: `Bearer ${HF_TOKEN}`,
-                    "Content-Type": "application/json"
-                },
-                method: "POST",
-                body: JSON.stringify({
-                    inputs: imagePrompt,
-                    parameters: {
-                        num_inference_steps: 30,
-                        guidance_scale: 7.5,
-                    }
-                }),
-            }
-        );
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            if (response.status === 503) {
-                throw new Error('⏳ โมเดลกำลังโหลด กรุณาลองใหม่อีกครั้ง');
-            }
-            throw new Error(`Hugging Face API error: ${response.status}`);
-        }
-        
-        const imageBuffer = await response.arrayBuffer();
-        const base64Image = Buffer.from(imageBuffer).toString('base64');
-        const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-        
-        res.json({ success: true, imageUrl });
-        
-    } catch (error) {
-        console.error('HF SD error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 🎨 ใช้ Gemini สร้างภาพ (fallback)
-app.post('/api/generate-themed-image', async (req, res) => {
-    try {
-        const { image, theme, prompt } = req.body;
-        
-        if (!image || !theme) {
-            return res.status(400).json({ error: 'กรุณาส่งรูปและธีม' });
-        }
-        
-        const API_KEY = process.env.GEMINI_API_KEY;
-        
-        if (!API_KEY) {
-            return res.status(500).json({ error: 'ไม่พบ GEMINI_API_KEY' });
-        }
-        
-        console.log(`🎨 Generating with Gemini: ${theme}`);
-        
-        const MODEL_NAME = 'models/gemini-3-pro-image-preview';
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-        
-        const imagePrompt = `Transform this person to look like a ${theme} (${prompt}).
-Keep the face and hair exactly the same.
-Change outfit, accessories, and background to match the theme.
-Make it look natural and photorealistic.`;
-        
-        const base64Data = image.split(',')[1] || image;
-        
-        const requestBody = {
-            contents: [{
-                parts: [
-                    { text: imagePrompt },
-                    {
-                        inline_data: {
-                            mime_type: "image/jpeg",
-                            data: base64Data
-                        }
-                    }
-                ]
-            }]
-        };
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || 'API error');
-        }
-        
-        const data = await response.json();
-        
-        let generatedImage = null;
-        
-        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-            const parts = data.candidates[0].content.parts;
-            for (const part of parts) {
-                if (part.inline_data && part.inline_data.data) {
-                    generatedImage = `data:${part.inline_data.mime_type || 'image/png'};base64,${part.inline_data.data}`;
-                    break;
+                    'Authorization': `Bearer ${LEONARDO_API_KEY}`,
+                    'Content-Type': 'application/json'
                 }
+            });
+            
+            if (!resultResponse.ok) {
+                console.warn(`Failed to get result: ${resultResponse.status}`);
+                attempts++;
+                continue;
             }
+            
+            const resultData = await resultResponse.json();
+            
+            if (resultData.generations_by_pk?.generated_images?.length > 0) {
+                imageUrl = resultData.generations_by_pk.generated_images[0].url;
+                console.log(`✅ Leonardo.ai generated image: ${imageUrl}`);
+                break;
+            }
+            
+            attempts++;
+            console.log(`⏳ Waiting for image... (${attempts}/${maxAttempts})`);
         }
         
-        if (generatedImage) {
-            res.json({ success: true, imageUrl: generatedImage });
+        if (imageUrl) {
+            res.json({ 
+                success: true, 
+                imageUrl: imageUrl,
+                message: `✨ สร้างภาพธีม ${theme} สำเร็จ! (Leonardo.ai)`,
+                provider: 'leonardo'
+            });
         } else {
-            throw new Error('ไม่ได้รับรูปจาก Gemini');
+            throw new Error('ไม่ได้รับรูปจาก Leonardo.ai ภายในเวลาที่กำหนด');
         }
         
     } catch (error) {
-        console.error('Gemini generate error:', error);
+        console.error('Leonardo.ai error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -893,11 +208,11 @@ const startServer = (port) => {
     const server = app.listen(port, () => {
         console.log(`✅ Server running on http://localhost:${port}`);
         console.log(`📁 Upload folder: ${uploadDir}`);
-        console.log(`🔑 Gemini API Key: ${process.env.GEMINI_API_KEY ? '✓ พบ' : '✗ ไม่พบ'}`);
-        console.log(`🆓 Hugging Face Token: ${process.env.HF_TOKEN ? '✓ พบ' : '✗ ไม่พบ'}`);
+        console.log(`🎨 Leonardo.ai API Key: ${process.env.LEONARDO_API_KEY ? '✓ พบ' : '✗ ไม่พบ'}`);
         console.log(`🚀 Endpoints ready:`);
-        console.log(`   - /api/generate-hf (FLUX.1-dev - ฟรี คุณภาพดี)`);
-        console.log(`   - /api/generate-hf-sd (Stable Diffusion - ฟรี เร็ว)`);
+        console.log(`   - POST /api/generate-leonardo (สร้างภาพด้วย Leonardo.ai)`);
+        console.log(`   - POST /api/upload (อัปโหลดรูป)`);
+        console.log(`   - GET /api/health (ตรวจสอบสถานะ)`);
         console.log(`🌐 เปิดเว็บ: http://localhost:${port}`);
     }).on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
