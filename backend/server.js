@@ -1953,12 +1953,15 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif|webp/;
+
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
+        const fileSize = parseInt(req.headers['content-length'], 10);
+        // undefined;
         if (mimetype && extname) {
             return cb(null, true);
         } else {
-            cb(new Error('เฉพาะไฟล์รูปภาพเท่านั้น (jpeg, jpg, png, gif, webp)'));
+            cb(new Error('เฉพาะไฟล์รูปภาพเท่านั้น (jpeg, jpg, png, gif, webp)'))
         }
     }
 });
@@ -2228,8 +2231,30 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
+// const startServer = (port) => {
+//     const server = app.listen(port, () => {
+//         console.log(`✅ Server running on http://localhost:${port}`);
+//         console.log(`📁 Upload folder: ${uploadDir}`);
+//         console.log(`🎨 Leonardo.ai API Key: ${process.env.LEONARDO_API_KEY ? '✓ พบ' : '✗ ไม่พบ'}`);
+//         console.log(`🚀 Endpoints ready:`);
+//         console.log(`   - POST /api/generate-leonardo (Image-to-Image - คงหน้าเหมือนต้นฉบับ)`);
+//         console.log(`   - POST /api/upload (อัปโหลดรูป)`);
+//         console.log(`   - GET /api/health (ตรวจสอบสถานะ)`);
+//         console.log(`🌐 เปิดเว็บ: http://localhost:${port}`);
+//     }).on('error', (err) => {
+//         if (err.code === 'EADDRINUSE') {
+//             console.log(`⚠️ Port ${port} is in use, trying ${port + 1}...`);
+//             startServer(port + 1);
+//         } else {
+//             console.error('Server error:', err);
+//         }
+//     });
+// };
+
+// startServer(PORT);
+// แทนที่ฟังก์ชัน startServer เดิมด้วยโค้ดนี้
 const startServer = (port) => {
-    const server = app.listen(port, () => {
+    const server = app.listen(port, '0.0.0.0', () => {  // เพิ่ม '0.0.0.0'
         console.log(`✅ Server running on http://localhost:${port}`);
         console.log(`📁 Upload folder: ${uploadDir}`);
         console.log(`🎨 Leonardo.ai API Key: ${process.env.LEONARDO_API_KEY ? '✓ พบ' : '✗ ไม่พบ'}`);
@@ -2237,6 +2262,17 @@ const startServer = (port) => {
         console.log(`   - POST /api/generate-leonardo (Image-to-Image - คงหน้าเหมือนต้นฉบับ)`);
         console.log(`   - POST /api/upload (อัปโหลดรูป)`);
         console.log(`   - GET /api/health (ตรวจสอบสถานะ)`);
+        
+        // แสดง IP สำหรับให้คนอื่นเชื่อมต่อ
+        const networkInterfaces = require('os').networkInterfaces();
+        console.log(`\n📡 ให้เพื่อนในวงแลนเดียวกันเข้าใช้ที่:`);
+        for (const [name, interfaces] of Object.entries(networkInterfaces)) {
+            for (const iface of interfaces) {
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    console.log(`   🌐 http://${iface.address}:${port}`);
+                }
+            }
+        }
         console.log(`🌐 เปิดเว็บ: http://localhost:${port}`);
     }).on('error', (err) => {
         if (err.code === 'EADDRINUSE') {

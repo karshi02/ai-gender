@@ -312,6 +312,64 @@
             color: #667eea;
         }
         
+        .voice-gesture-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8ecf5 100%);
+            border-radius: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .voice-gesture-panel button {
+            margin: 0;
+        }
+        
+        .status-text {
+            font-size: 12px;
+            color: #4a5568;
+            text-align: center;
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .status-text span {
+            font-weight: bold;
+        }
+        
+        .command-hint {
+            font-size: 11px;
+            color: #718096;
+            text-align: center;
+            width: 100%;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px solid #cbd5e0;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .listening {
+            animation: pulse 1s infinite;
+        }
+        
         @media (max-width: 500px) {
             .theme-grid {
                 grid-template-columns: repeat(3, 1fr);
@@ -333,7 +391,7 @@
             </div>
             
             <div class="strength-control" id="strengthControl" style="display: none;">
-                <label>🎨 ความเหมือนต้นฉบับ: <span id="strengthValue" class="strength-value">70%</span></label>
+                <label>🎨 ความเหมือนต้นฉบับ: <span id="strengthValue" class="strength-value">65%</span></label>
                 <input type="range" id="strengthSlider" min="0.4" max="0.8" step="0.01" value="0.65">
                 <div style="display: flex; justify-content: space-between; font-size: 10px; color: #718096;">
                     <span>เหมือนมาก</span>
@@ -353,6 +411,25 @@
                     🗑️ ล้างรูป
                 </button>
             </div>
+            
+            <!-- ส่วนควบคุมเสียงและท่าทาง -->
+            <div class="voice-gesture-panel">
+                <button class="btn-camera" id="voiceBtn" style="background: #667eea;">
+                    🎙️ สั่งงานด้วยเสียง
+                </button>
+                <button class="btn-camera secondary" id="gestureBtn" style="background: #48bb78;">
+                    ✌️ เปิดตรวจจับท่าทาง
+                </button>
+                <div class="status-text">
+                    🎤 <span id="voiceStatus">กดปุ่มเพื่อสั่งงานด้วยเสียง</span> &nbsp;|&nbsp;
+                    ✋ <span id="gestureStatus">ปิดอยู่</span>
+                </div>
+                <div class="command-hint">
+                    💡 พูดชื่อธีม: "นักบินอวกาศ" "ซามูไร" "เจ้าหญิง" "ซูเปอร์ฮีโร่" "ไซเบอร์พังค์" ฯลฯ<br>
+                    ✌️ ชู 2 นิ้ว (นิ้วชี้+นิ้วกลาง) หน้ากล้อง = ถ่ายรูปอัตโนมัติ
+                </div>
+            </div>
+            
             <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(this)">
             <video id="video" style="display: none" autoplay playsinline></video>
             <canvas id="canvas" style="display: none"></canvas>
@@ -395,7 +472,7 @@
     </div>
 
     <script>
-        // ธีมต่างๆ
+        // ==================== ธีมต่างๆ ====================
         const themes = [
             { name: "นักบินอวกาศ", emoji: "👨‍🚀", prompt: "astronaut in futuristic space suit, helmet, space background, stars, professional lighting" },
             { name: "ซูเปอร์ฮีโร่", emoji: "🦸", prompt: "superhero with cape, mask, heroic pose, city background, cinematic lighting" },
@@ -411,12 +488,21 @@
             { name: "สโนว์บอร์ด", emoji: "🏂", prompt: "cool snowboarder, winter gear, snowy mountain background, action" }
         ];
         
+        // ==================== ตัวแปรหลัก ====================
         let currentPhoto = null;
         let currentPhotoBase64 = null;
         let selectedTheme = null;
         let generatedImageUrl = null;
         
-        // สร้างปุ่มธีม
+        // ตัวแปรสำหรับเสียงและท่าทาง
+        let recognition = null;
+        let isListening = false;
+        let gestureActive = false;
+        let gestureVideo = null;
+        let gestureStream = null;
+        let gestureCheckInterval = null;
+        
+        // ==================== ฟังก์ชันหลัก UI ====================
         function createThemeButtons() {
             const grid = document.getElementById('themeGrid');
             grid.innerHTML = themes.map((theme, index) => `
@@ -434,6 +520,13 @@
             });
             document.querySelector(`.theme-card[data-theme="${index}"]`).classList.add('selected');
             updateGenerateButton();
+            showToast(`🎨 เลือกธีม "${selectedTheme.name}" แล้ว`, 'success');
+            speak(`เลือกธีม ${selectedTheme.name} แล้ว`);
+            
+            // ถ้ามีรูปแล้ว ให้สร้างภาพอัตโนมัติ
+            if (currentPhoto) {
+                setTimeout(() => generateImage(), 500);
+            }
         }
         
         function updateGenerateButton() {
@@ -448,7 +541,7 @@
             }
         }
         
-        // เปิดกล้อง
+        // ==================== กล้องและการถ่ายรูป ====================
         async function openCamera() {
             try {
                 const video = document.getElementById('video');
@@ -488,17 +581,23 @@
             
             const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
             currentPhoto = photoDataUrl;
-            currentPhotoBase64 = photoDataUrl; // เก็บ base64 ไว้ใช้กับ API
+            currentPhotoBase64 = photoDataUrl;
             
             const preview = document.getElementById('photoPreview');
             preview.innerHTML = `<img src="${currentPhoto}" alt="Your photo">`;
             preview.classList.add('has-photo');
             
-            // แสดง slider ปรับความเหมือน
             document.getElementById('strengthControl').style.display = 'block';
             
             closeCamera();
             updateGenerateButton();
+            showToast('📸 ถ่ายรูปสำเร็จ!', 'success');
+            speak('ถ่ายรูปสำเร็จ');
+            
+            // ถ้ามีธีมแล้ว ให้สร้างภาพอัตโนมัติ
+            if (selectedTheme) {
+                setTimeout(() => generateImage(), 500);
+            }
         }
         
         function closeCamera() {
@@ -540,15 +639,17 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     currentPhoto = e.target.result;
-                    currentPhotoBase64 = e.target.result; // เก็บ base64 ไว้ใช้กับ API
+                    currentPhotoBase64 = e.target.result;
                     const preview = document.getElementById('photoPreview');
                     preview.innerHTML = `<img src="${currentPhoto}" alt="Your photo">`;
                     preview.classList.add('has-photo');
-                    
-                    // แสดง slider ปรับความเหมือน
                     document.getElementById('strengthControl').style.display = 'block';
-                    
                     updateGenerateButton();
+                    showToast('📁 อัปโหลดรูปสำเร็จ!', 'success');
+                    
+                    if (selectedTheme) {
+                        setTimeout(() => generateImage(), 500);
+                    }
                 };
                 reader.readAsDataURL(file);
             }
@@ -565,6 +666,7 @@
             document.getElementById('resultSection').style.display = 'none';
             document.getElementById('strengthControl').style.display = 'none';
             generatedImageUrl = null;
+            preview.style.opacity = '1';
             
             document.querySelectorAll('.theme-card').forEach(card => {
                 card.classList.remove('selected');
@@ -580,10 +682,10 @@
             preview.style.opacity = '1';
         }
         
-        // สร้างภาพด้วย Leonardo.ai (Image-to-Image - คงหน้าเดิม)
+        // ==================== สร้างภาพ ====================
         async function generateImage() {
             if (!currentPhotoBase64 || !selectedTheme) {
-                alert('กรุณาอัปโหลดรูปและเลือกธีมก่อน');
+                showToast('กรุณาถ่ายรูปและเลือกธีมก่อน', 'error');
                 return;
             }
             
@@ -591,13 +693,7 @@
             loading.style.display = 'flex';
             
             try {
-                // ดึงค่า strength จาก slider
                 const strength = parseFloat(document.getElementById('strengthSlider').value);
-                const strengthPercent = Math.round(strength * 100);
-                
-                console.log('🎨 กำลังส่งคำขอสร้างภาพ...');
-                console.log('Theme:', selectedTheme.name);
-                console.log('Strength:', strength);
                 
                 const response = await fetch('/api/generate-leonardo', {
                     method: 'POST',
@@ -607,8 +703,8 @@
                     body: JSON.stringify({
                         theme: selectedTheme.name,
                         prompt: selectedTheme.prompt,
-                        referenceImage: currentPhotoBase64, // ส่ง base64 ของรูปต้นฉบับ
-                        strength: strength // ส่งค่าความเหมือน
+                        referenceImage: currentPhotoBase64,
+                        strength: strength
                     })
                 });
                 
@@ -619,19 +715,15 @@
                     const resultImage = document.getElementById('resultImage');
                     resultImage.src = generatedImageUrl;
                     document.getElementById('resultSection').style.display = 'block';
-                    
                     const preview = document.getElementById('photoPreview');
                     preview.style.opacity = '0.5';
-                    
-                    // แสดงข้อความ success
-                    console.log('✅ สร้างภาพสำเร็จ!');
+                    showToast(`✨ สร้างภาพธีม ${selectedTheme.name} สำเร็จ!`, 'success');
                 } else {
-                    alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถสร้างภาพได้'));
-                    console.error('Error:', data);
+                    throw new Error(data.error || 'ไม่สามารถสร้างภาพได้');
                 }
             } catch (error) {
                 console.error('Generate error:', error);
-                alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์: ' + error.message + '\n\nกรุณาตรวจสอบว่าเซิร์ฟเวอร์กำลังทำงานอยู่');
+                showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
             } finally {
                 loading.style.display = 'none';
             }
@@ -656,7 +748,7 @@
                     if (navigator.share) {
                         await navigator.share({
                             title: 'AI Theme Changer',
-                            text: `ภาพธีม ${selectedTheme?.name} ที่สร้างด้วย Leonardo.ai (คงใบหน้าเหมือนเดิม)`,
+                            text: `ภาพธีม ${selectedTheme?.name} ที่สร้างด้วย Leonardo.ai`,
                             files: [file]
                         });
                     } else {
@@ -668,7 +760,247 @@
             }
         }
         
-        // ปรับค่า strength และแสดงผล
+        // ==================== ฟังก์ชันเสียง ====================
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'th-TH';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        function startVoiceRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showToast('เบราว์เซอร์ของคุณไม่รองรับการสั่งงานด้วยเสียง', 'error');
+                return;
+            }
+            
+            if (isListening) {
+                if (recognition) recognition.abort();
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'th-TH';
+            recognition.interimResults = false;
+            
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('voiceStatus').innerHTML = '🎤 กำลังฟัง... พูดชื่อธีมได้เลย';
+                document.getElementById('voiceBtn').style.background = '#f56565';
+                document.getElementById('voiceBtn').classList.add('listening');
+            };
+            
+            recognition.onend = () => {
+                isListening = false;
+                document.getElementById('voiceStatus').innerHTML = 'กดปุ่มเพื่อสั่งงานด้วยเสียง';
+                document.getElementById('voiceBtn').style.background = '#667eea';
+                document.getElementById('voiceBtn').classList.remove('listening');
+            };
+            
+            recognition.onresult = (event) => {
+                const command = event.results[0][0].transcript;
+                console.log('Voice command:', command);
+                
+                // ค้นหาธีมที่ตรงกับคำสั่ง
+                let matchedTheme = null;
+                for (const theme of themes) {
+                    if (command.includes(theme.name) || theme.name.includes(command)) {
+                        matchedTheme = theme;
+                        break;
+                    }
+                }
+                
+                // คำสั่งภาษาอังกฤษด้วย
+                const engMap = {
+                    'astronaut': 'นักบินอวกาศ',
+                    'superhero': 'ซูเปอร์ฮีโร่',
+                    'princess': 'เจ้าหญิง',
+                    'samurai': 'ซามูไร',
+                    'alien': 'เอเลี่ยน',
+                    'pirate': 'โจรสลัด',
+                    'cyberpunk': 'ไซเบอร์พังค์',
+                    'wizard': 'เวทมนตร์',
+                    'king': 'ราชา',
+                    'ninja': 'นินจา',
+                    'snowboard': 'สโนว์บอร์ด'
+                };
+                
+                for (const [eng, th] of Object.entries(engMap)) {
+                    if (command.toLowerCase().includes(eng)) {
+                        matchedTheme = themes.find(t => t.name === th);
+                        break;
+                    }
+                }
+                
+                if (matchedTheme) {
+                    const themeIndex = themes.findIndex(t => t.name === matchedTheme.name);
+                    selectTheme(themeIndex);
+                    showToast(`✅ รับรู้คำสั่ง: "${matchedTheme.name}"`, 'success');
+                    speak(`เลือกธีม ${matchedTheme.name}`);
+                } else {
+                    showToast(`❓ ไม่เข้าใจคำสั่ง: "${command}"`, 'error');
+                    speak('ไม่เข้าใจคำสั่ง กรุณาพูดชื่อธีม');
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech error:', event.error);
+                showToast('เกิดข้อผิดพลาดในการฟังเสียง', 'error');
+                recognition.abort();
+            };
+            
+            recognition.start();
+        }
+        
+        // ==================== ฟังก์ชันตรวจจับท่าทาง (ชู 2 นิ้ว) ====================
+        async function startGestureDetection() {
+            if (gestureActive) {
+                stopGestureDetection();
+                return;
+            }
+            
+            try {
+                gestureStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                gestureVideo = document.createElement('video');
+                gestureVideo.srcObject = gestureStream;
+                gestureVideo.setAttribute('playsinline', '');
+                await gestureVideo.play();
+                
+                // สร้าง canvas สำหรับตรวจจับ
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                let lastTrigger = 0;
+                const cooldown = 3000;
+                
+                gestureCheckInterval = setInterval(() => {
+                    if (!gestureActive) return;
+                    
+                    if (gestureVideo.videoWidth > 0 && gestureVideo.videoHeight > 0) {
+                        canvas.width = gestureVideo.videoWidth;
+                        canvas.height = gestureVideo.videoHeight;
+                        ctx.drawImage(gestureVideo, 0, 0, canvas.width, canvas.height);
+                        
+                        // ตรวจจับมือด้วยสีผิวอย่างง่าย (ใช้การตรวจจับสีผิว)
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+                        
+                        // หาพื้นที่สีผิว (ประมาณ)
+                        let skinPixels = [];
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i+1];
+                            const b = data[i+2];
+                            // ช่วงสีผิว
+                            if (r > 80 && g > 40 && b > 20 && r > g && r > b && Math.abs(r-g) > 15) {
+                                const x = (i / 4) % canvas.width;
+                                const y = Math.floor((i / 4) / canvas.width);
+                                skinPixels.push({x, y});
+                            }
+                        }
+                        
+                        // ตรวจจับว่ามีมือชู 2 นิ้ว โดยประมาณ (ตรวจจับจุดสูงสุด 2 จุด)
+                        if (skinPixels.length > 100) {
+                            // หาจุดสูงสุดของมือ
+                            let topPoints = skinPixels.filter(p => p.y < canvas.height / 2);
+                            topPoints.sort((a, b) => a.y - b.y);
+                            
+                            if (topPoints.length > 10) {
+                                const topY = topPoints[0].y;
+                                const fingers = topPoints.filter(p => Math.abs(p.y - topY) < 30);
+                                
+                                // ถ้ามีจุดสูง 2 จุดแยกกัน แสดงว่าชู 2 นิ้ว
+                                if (fingers.length > 5) {
+                                    const xPositions = [...new Set(fingers.map(f => Math.floor(f.x / 20)))];
+                                    if (xPositions.length >= 2) {
+                                        const now = Date.now();
+                                        if (now - lastTrigger > cooldown) {
+                                            lastTrigger = now;
+                                            console.log('✌️ ตรวจจับท่าชู 2 นิ้ว!');
+                                            showToast('✌️ ตรวจจับท่าชู 2 นิ้ว! กำลังถ่ายรูป...', 'info');
+                                            speak('ตรวจจับท่าชูสองนิ้ว');
+                                            
+                                            // ถ่ายรูปอัตโนมัติ
+                                            if (window.currentStream && document.getElementById('video').style.display === 'block') {
+                                                takePhoto();
+                                            } else {
+                                                openCamera();
+                                                setTimeout(() => takePhoto(), 800);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }, 200);
+                
+                gestureActive = true;
+                document.getElementById('gestureStatus').innerHTML = '✌️ กำลังตรวจจับท่าทาง...';
+                document.getElementById('gestureBtn').style.background = '#f56565';
+                document.getElementById('gestureBtn').innerHTML = '✋ ปิดตรวจจับท่าทาง';
+                showToast('✅ เปิดการตรวจจับท่าทางแล้ว ชู 2 นิ้วเพื่อถ่ายรูป', 'success');
+                
+            } catch (error) {
+                console.error('Gesture detection error:', error);
+                showToast('ไม่สามารถเปิดกล้องสำหรับตรวจจับท่าทางได้', 'error');
+            }
+        }
+        
+        function stopGestureDetection() {
+            if (gestureCheckInterval) {
+                clearInterval(gestureCheckInterval);
+                gestureCheckInterval = null;
+            }
+            if (gestureStream) {
+                gestureStream.getTracks().forEach(track => track.stop());
+                gestureStream = null;
+            }
+            if (gestureVideo) {
+                gestureVideo = null;
+            }
+            gestureActive = false;
+            document.getElementById('gestureStatus').innerHTML = 'ปิดอยู่';
+            document.getElementById('gestureBtn').style.background = '#48bb78';
+            document.getElementById('gestureBtn').innerHTML = '✌️ เปิดตรวจจับท่าทาง';
+            showToast('ปิดการตรวจจับท่าทางแล้ว', 'info');
+        }
+        
+        // ==================== Toast แจ้งเตือน ====================
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#667eea';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${bgColor};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 50px;
+                font-size: 14px;
+                z-index: 1001;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                animation: fadeInUp 0.3s ease;
+                white-space: nowrap;
+                max-width: 90%;
+                white-space: normal;
+                text-align: center;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ==================== ปรับค่า strength ====================
         const strengthSlider = document.getElementById('strengthSlider');
         const strengthValue = document.getElementById('strengthValue');
         
@@ -676,8 +1008,6 @@
             const value = parseFloat(e.target.value);
             const percent = Math.round(value * 100);
             strengthValue.textContent = `${percent}%`;
-            
-            // แสดงคำแนะนำ
             if (value < 0.55) {
                 strengthValue.style.color = '#48bb78';
             } else if (value > 0.7) {
@@ -687,7 +1017,7 @@
             }
         });
         
-        // ตรวจสอบการเชื่อมต่อ server
+        // ==================== ตรวจสอบเซิร์ฟเวอร์ ====================
         async function checkServerStatus() {
             const statusBadge = document.getElementById('statusBadge');
             try {
@@ -703,10 +1033,20 @@
             }
         }
         
-        // เริ่มต้น
+        // ==================== เริ่มต้น ====================
         createThemeButtons();
         checkServerStatus();
         setInterval(checkServerStatus, 5000);
+        
+        // เพิ่ม Event Listeners
+        document.getElementById('voiceBtn').addEventListener('click', startVoiceRecognition);
+        document.getElementById('gestureBtn').addEventListener('click', () => {
+            if (gestureActive) {
+                stopGestureDetection();
+            } else {
+                startGestureDetection();
+            }
+        });
     </script>
 </body>
 </html>
