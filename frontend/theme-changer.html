@@ -823,7 +823,7 @@ body {
 <!-- SCREEN 3: THEME -->
 <div class="screen" id="screen-theme">
   <div class="booth-header">
-    <button class="btn-back" onclick="gotoScreen('photo')">← กลับ</button>
+    <button class="btn-back" onclick="gotoScreen('photo')">กลับ</button>
     <div class="logo" onclick="gotoScreen('welcome')" style="position:absolute;left:50%;transform:translateX(-50%)">AI <span>Photo</span> Booth</div>
     <div class="step-dots">
       <div class="step-dot done"></div>
@@ -864,7 +864,7 @@ body {
         <circle cx="60" cy="60" r="52" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-dasharray="80 246" stroke-linecap="round"/>
         <defs><linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#F0D060"/></linearGradient></defs>
       </svg>
-      <div class="gen-ring-inner" id="genEmoji">✨</div>
+      <div class="gen-ring-inner" id="genEmoji"></div>
     </div>
     <div class="gen-title">กำลังสร้างภาพ...</div>
     <div class="gen-subtitle" id="genSubtitle">AI กำลังสร้าง 4 ภาพให้คุณเลือก</div>
@@ -872,12 +872,12 @@ body {
     <div class="gen-steps">
       <div class="gen-step" id="gs1"><span class="step-icon">🔍</span> วิเคราะห์ใบหน้า</div>
       <div class="gen-step" id="gs2"><span class="step-icon">🎨</span> สร้างธีมด้วย AI (4 ภาพ)</div>
-      <div class="gen-step" id="gs3"><span class="step-icon">✨</span> ปรับแต่งรายละเอียด</div>
-      <div class="gen-step" id="gs4"><span class="step-icon">📦</span> เตรียมภาพให้เลือก</div>
+      <div class="gen-step" id="gs3"><span class="step-icon"></span> ปรับแต่งรายละเอียด</div>
+      <div class="gen-step" id="gs4"><span class="step-icon"></span> เตรียมภาพให้เลือก</div>
     </div>
   </div>
   <div class="gen-results-overlay" id="genSelectState" style="padding-bottom:40px;">
-    <div class="gen-results-title">🎉 เลือกภาพที่ชอบที่สุด</div>
+    <div class="gen-results-title">เลือกภาพที่ชอบที่สุด</div>
     <div class="gen-results-subtitle">แตะภาพเพื่อเลือก</div>
     <div class="gen-4grid" id="gen4Grid"></div>
     <button class="btn-select-result" id="btnSelectResult" disabled onclick="confirmSelectedImage()">เลือกภาพนี้</button>
@@ -916,7 +916,7 @@ body {
       <button class="btn-share share" onclick="shareResult()"><span class="s-icon">📤</span>แชร์</button>
       <button class="btn-share again" onclick="startAgain()"><span class="s-icon">🔄</span>ถ่ายใหม่</button>
     </div>
-    <button class="btn-home-result" onclick="gotoScreen('welcome')">🏠 กลับหน้าหลัก</button>
+    <button class="btn-home-result" onclick="gotoScreen('welcome')">กลับหน้าหลัก</button>
   </div>
 </div>
 

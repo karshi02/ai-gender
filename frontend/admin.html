@@ -1,0 +1,575 @@
+<!-- <!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="img/icon_ai-gender.png">
+<link rel="shortcut icon" type="image/png" href="img/icon_ai-gender.png">
+    <title>Admin Panel | AI Photo Booth</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0f;
+            font-family: 'Kanit', 'Space Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .admin-container {
+            background: #111;
+            border-radius: 24px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #D4AF37;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+        }
+        h2 {
+            color: #D4AF37;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #1e1e2a;
+            border: 1px solid #333;
+            color: #D4AF37;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        button {
+            background: #D4AF37;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { opacity: 0.8; transform: translateY(-1px); }
+        .hidden { display: none; }
+        .status {
+            margin-top: 12px;
+            font-size: 13px;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .success { background: rgba(0,255,0,0.1); color: #0f0; border: 1px solid #0f0; }
+        .error { background: rgba(255,0,0,0.1); color: #f66; border: 1px solid #f66; }
+        .info { background: rgba(212,175,55,0.1); color: #D4AF37; border: 1px solid #D4AF37; }
+        hr { border-color: #333; margin: 20px 0; }
+        .key-masked {
+            font-family: monospace;
+            background: #000;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginBox" class="admin-container">
+    <h2>🔐 Admin Login</h2>
+    <input type="text" id="adminUser" placeholder="Username" autocomplete="off">
+    <input type="password" id="adminPass" placeholder="Password">
+    <button onclick="adminLogin()">Login</button>
+    <div id="loginStatus" class="status"></div>
+</div>
+
+<div id="adminPanel" class="admin-container hidden">
+    <h2>⚙️ AI Photo Booth Config</h2>
+    
+    <label style="color:#aaa;">🔑 LEONARDO_API_KEY</label>
+    <input type="text" id="apiKeyInput" placeholder="Paste your API key here">
+    <button onclick="updateApiKey()">💾 Save API Key</button>
+    
+    <div id="apiStatus" class="status"></div>
+    
+    <hr>
+    
+    <div class="key-masked" id="maskedKey">🔒 Not loaded</div>
+    
+    <hr>
+    
+    <button onclick="checkSystemStatus()" style="background:#333; color:#D4AF37;">📊 System Status</button>
+    <div id="systemStatus" class="status"></div>
+    
+    <hr>
+    
+    <button onclick="adminLogout()" style="background:#900; color:white;">🚪 Logout</button>
+</div>
+
+<script>
+const API_BASE = '';
+
+async function adminLogin() {
+    const username = document.getElementById('adminUser').value;
+    const password = document.getElementById('adminPass').value;
+    const statusDiv = document.getElementById('loginStatus');
+    
+    statusDiv.innerHTML = '⏳ Logging in...';
+    statusDiv.className = 'status info';
+    
+    try {
+        const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        if (res.ok) {
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            loadCurrentKey();
+            statusDiv.innerHTML = '';
+        } else {
+            statusDiv.innerHTML = '❌ Invalid username or password';
+            statusDiv.className = 'status error';
+        }
+    } catch(e) {
+        statusDiv.innerHTML = '❌ Cannot connect to server';
+        statusDiv.className = 'status error';
+    }
+}
+
+async function loadCurrentKey() {
+    try {
+        const res = await fetch('/api/admin/leonardo-key');
+        const data = await res.json();
+        if (data.key) {
+            document.getElementById('apiKeyInput').value = data.key;
+            document.getElementById('maskedKey').innerHTML = `🔑 Current key: ${data.masked || '***'}`;
+        } else {
+            document.getElementById('maskedKey').innerHTML = '⚠️ No API Key configured';
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+async function updateApiKey() {
+    const newKey = document.getElementById('apiKeyInput').value.trim();
+    const statusDiv = document.getElementById('apiStatus');
+    
+    if (!newKey) {
+        statusDiv.innerHTML = '❌ Please enter API Key';
+        statusDiv.className = 'status error';
+        return;
+    }
+    
+    statusDiv.innerHTML = '⏳ Updating API Key...';
+    statusDiv.className = 'status info';
+    
+    try {
+        const res = await fetch('/api/admin/update-leonardo-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newKey })
+        });
+        
+        if (res.ok) {
+            statusDiv.innerHTML = '✅ API Key updated successfully! (active immediately)';
+            statusDiv.className = 'status success';
+            await loadCurrentKey();
+        } else {
+            const err = await res.json();
+            statusDiv.innerHTML = '❌ ' + (err.error || 'Update failed');
+            statusDiv.className = 'status error';
+        }
+    } catch(e) {
+        statusDiv.innerHTML = '❌ Network error';
+        statusDiv.className = 'status error';
+    }
+}
+
+async function checkSystemStatus() {
+    const statusDiv = document.getElementById('systemStatus');
+    statusDiv.innerHTML = '⏳ Loading...';
+    statusDiv.className = 'status info';
+    
+    try {
+        const res = await fetch('/api/admin/system-status');
+        const data = await res.json();
+        statusDiv.innerHTML = `
+            ✅ Server: ${data.status}<br>
+            🎨 Leonardo: ${data.leonardoConfigured ? '✅ Configured' : '❌ Missing'}<br>
+            🟢 Uptime: ${Math.floor(data.uptime / 60)} minutes<br>
+            📅 ${data.timestamp}
+        `;
+        statusDiv.className = 'status success';
+    } catch(e) {
+        statusDiv.innerHTML = '❌ Cannot fetch status';
+        statusDiv.className = 'status error';
+    }
+}
+
+async function adminLogout() {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    location.reload();
+}
+</script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <link rel="icon" type="image/png" href="img/icon_ai-gender.png">
+    <link rel="shortcut icon" type="image/png" href="img/icon_ai-gender.png">
+    <title>Admin Panel | AI Photo Booth</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0f;
+            font-family: 'Kanit', 'Space Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .admin-container {
+            background: #111;
+            border-radius: 24px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #D4AF37;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+        }
+        h2 {
+            color: #D4AF37;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #1e1e2a;
+            border: 1px solid #333;
+            color: #D4AF37;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        button {
+            background: #D4AF37;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+        }
+        button:hover { opacity: 0.8; transform: translateY(-1px); }
+        .hidden { display: none; }
+        .status {
+            margin-top: 12px;
+            font-size: 13px;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .success { background: rgba(0,255,0,0.1); color: #0f0; border: 1px solid #0f0; }
+        .error { background: rgba(255,0,0,0.1); color: #f66; border: 1px solid #f66; }
+        .info { background: rgba(212,175,55,0.1); color: #D4AF37; border: 1px solid #D4AF37; }
+        hr { border-color: #333; margin: 20px 0; }
+        .key-masked {
+            font-family: monospace;
+            background: #000;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .logout-btn {
+            background: #900;
+            color: white;
+        }
+        .logout-btn:hover {
+            background: #b00;
+        }
+        .status-btn {
+            background: #333;
+            color: #D4AF37;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginBox" class="admin-container">
+    <h2>🔐 Admin Login</h2>
+    <input type="text" id="adminUser" placeholder="Username" autocomplete="off" required>
+    <input type="password" id="adminPass" placeholder="Password" autocomplete="current-password" required>
+    <button onclick="adminLogin()" id="loginBtn">Login</button>
+    <div id="loginStatus" class="status"></div>
+</div>
+
+<div id="adminPanel" class="admin-container hidden">
+    <h2>⚙️ AI Photo Booth Config</h2>
+    
+    <label style="color:#aaa;">🔑 LEONARDO_API_KEY</label>
+    <input type="password" id="apiKeyInput" placeholder="Paste your API key here" autocomplete="off">
+    <button onclick="updateApiKey()">💾 Save API Key</button>
+    
+    <div id="apiStatus" class="status"></div>
+    
+    <hr>
+    
+    <div class="key-masked" id="maskedKey">🔒 Not loaded</div>
+    
+    <hr>
+    
+    <button onclick="checkSystemStatus()" class="status-btn">📊 System Status</button>
+    <div id="systemStatus" class="status"></div>
+    
+    <hr>
+    
+    <button onclick="adminLogout()" class="logout-btn">🚪 Logout</button>
+</div>
+
+<script>
+// ฟังก์ชัน escape HTML เพื่อป้องกัน XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+        return c;
+    });
+}
+
+// Rate limiting ในฝั่ง client (ช่วยลดการยิงซ้ำ)
+let lastLoginAttempt = 0;
+const LOGIN_COOLDOWN_MS = 2000;
+
+const API_BASE = '';
+
+// Helper function สำหรับ fetch ที่เพิ่ม CSRF token และ credentials
+async function securedFetch(url, options = {}) {
+    const defaultOptions = {
+        credentials: 'same-origin',  // ส่ง cookie อัตโนมัติ
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'  // ป้องกัน CSRF ง่าย ๆ
+        }
+    };
+    
+    // รวม options
+    const finalOptions = { ...defaultOptions, ...options };
+    if (options.body) {
+        finalOptions.headers = { ...defaultOptions.headers, ...options.headers };
+    }
+    
+    try {
+        const response = await fetch(url, finalOptions);
+        return response;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
+}
+
+async function adminLogin() {
+    const now = Date.now();
+    if (now - lastLoginAttempt < LOGIN_COOLDOWN_MS) {
+        const statusDiv = document.getElementById('loginStatus');
+        statusDiv.innerHTML = '⏳ Please wait before trying again';
+        statusDiv.className = 'status error';
+        return;
+    }
+    lastLoginAttempt = now;
+    
+    const username = document.getElementById('adminUser').value.trim();
+    const password = document.getElementById('adminPass').value;
+    const statusDiv = document.getElementById('loginStatus');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    if (!username || !password) {
+        statusDiv.innerHTML = '❌ Please enter username and password';
+        statusDiv.className = 'status error';
+        return;
+    }
+    
+    // จำกัดความยาวเพื่อป้องกัน DoS บางส่วน
+    if (username.length > 50 || password.length > 100) {
+        statusDiv.innerHTML = '❌ Invalid input length';
+        statusDiv.className = 'status error';
+        return;
+    }
+    
+    statusDiv.innerHTML = '⏳ Logging in...';
+    statusDiv.className = 'status info';
+    loginBtn.disabled = true;
+    
+    try {
+        const res = await securedFetch('/api/admin/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+        });
+        
+        if (res.ok) {
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            await loadCurrentKey();
+            statusDiv.innerHTML = '';
+            // clear password field
+            document.getElementById('adminPass').value = '';
+        } else {
+            let errorMsg = '❌ Invalid username or password';
+            try {
+                const errData = await res.json();
+                if (errData.message) errorMsg = '❌ ' + escapeHTML(errData.message);
+            } catch(e) {}
+            statusDiv.innerHTML = errorMsg;
+            statusDiv.className = 'status error';
+        }
+    } catch(e) {
+        statusDiv.innerHTML = '❌ Cannot connect to server';
+        statusDiv.className = 'status error';
+    } finally {
+        loginBtn.disabled = false;
+    }
+}
+
+async function loadCurrentKey() {
+    try {
+        const res = await securedFetch('/api/admin/leonardo-key');
+        if (!res.ok) throw new Error('Unauthorized');
+        const data = await res.json();
+        if (data.key) {
+            // ใช้ password field เพื่อซ่อน key
+            const inputField = document.getElementById('apiKeyInput');
+            inputField.value = data.key;
+            inputField.type = 'password';
+            document.getElementById('maskedKey').innerHTML = `🔑 Current key: ${escapeHTML(data.masked || '***')}`;
+        } else {
+            document.getElementById('maskedKey').innerHTML = '⚠️ No API Key configured';
+        }
+    } catch(e) {
+        console.error(e);
+        document.getElementById('maskedKey').innerHTML = '⚠️ Failed to load key (session may have expired)';
+    }
+}
+
+// toggle show/hide api key (optional security)
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('apiKeyInput');
+    if (input.type === 'password') {
+        input.type = 'text';
+    } else {
+        input.type = 'password';
+    }
+}
+
+async function updateApiKey() {
+    const newKey = document.getElementById('apiKeyInput').value.trim();
+    const statusDiv = document.getElementById('apiStatus');
+    
+    if (!newKey) {
+        statusDiv.innerHTML = '❌ Please enter API Key';
+        statusDiv.className = 'status error';
+        return;
+    }
+    
+    if (newKey.length < 10 || newKey.length > 500) {
+        statusDiv.innerHTML = '❌ Invalid API key length';
+        statusDiv.className = 'status error';
+        return;
+    }
+    
+    statusDiv.innerHTML = '⏳ Updating API Key...';
+    statusDiv.className = 'status info';
+    
+    try {
+        const res = await securedFetch('/api/admin/update-leonardo-key', {
+            method: 'POST',
+            body: JSON.stringify({ newKey })
+        });
+        
+        if (res.ok) {
+            statusDiv.innerHTML = '✅ API Key updated successfully! (active immediately)';
+            statusDiv.className = 'status success';
+            await loadCurrentKey();
+            // ล้าง history ของ input (security)
+            document.getElementById('apiKeyInput').value = '';
+            await loadCurrentKey();
+        } else {
+            const err = await res.json();
+            statusDiv.innerHTML = '❌ ' + escapeHTML(err.error || 'Update failed');
+            statusDiv.className = 'status error';
+        }
+    } catch(e) {
+        statusDiv.innerHTML = '❌ Network error';
+        statusDiv.className = 'status error';
+    }
+}
+
+async function checkSystemStatus() {
+    const statusDiv = document.getElementById('systemStatus');
+    statusDiv.innerHTML = '⏳ Loading...';
+    statusDiv.className = 'status info';
+    
+    try {
+        const res = await securedFetch('/api/admin/system-status');
+        if (!res.ok) throw new Error('Unauthorized');
+        const data = await res.json();
+        
+        // Escape ข้อมูลทุกอย่างก่อนเอาไปแสดง
+        const safeStatus = escapeHTML(data.status || 'unknown');
+        const leonardoStatus = data.leonardoConfigured ? '✅ Configured' : '❌ Missing';
+        const uptimeMinutes = Math.floor((data.uptime || 0) / 60);
+        const safeTimestamp = escapeHTML(data.timestamp || '');
+        
+        statusDiv.innerHTML = `
+            ✅ Server: ${safeStatus}<br>
+            🎨 Leonardo: ${leonardoStatus}<br>
+            🟢 Uptime: ${uptimeMinutes} minutes<br>
+            📅 ${safeTimestamp}
+        `;
+        statusDiv.className = 'status success';
+    } catch(e) {
+        statusDiv.innerHTML = '❌ Cannot fetch status (session expired?)';
+        statusDiv.className = 'status error';
+    }
+}
+
+async function adminLogout() {
+    try {
+        await securedFetch('/api/admin/logout', { method: 'POST' });
+    } catch(e) {
+        console.error('Logout error', e);
+    } finally {
+        // ล้าง session ทั้งใน frontend
+        location.reload();
+    }
+}
+
+// เพิ่ม keyboard shortcut (optional)
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('loginBox').classList.contains('hidden')) {
+        document.getElementById('adminUser').value = '';
+        document.getElementById('adminPass').value = '';
+    }
+});
+
+// ป้องกันการ copy/paste ข้อมูลสำคัญเกินไป (optional)
+document.getElementById('apiKeyInput')?.addEventListener('copy', function(e) {
+    // ถ้าต้องการ log การ copy ก็ได้
+    console.log('API Key copy attempted');
+});
+</script>
+</body>
+</html>

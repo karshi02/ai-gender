@@ -471,6 +471,114 @@ app.post('/api/generate-4', async (req, res) => {
     }
 });
 
+// ========== 🛡️ ADMIN SYSTEM ==========
+const session = require('express-session');
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'default-secret-change-me',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        secure: false,        // true ถ้าใช้ HTTPS
+        httpOnly: true,
+        maxAge: 8 * 60 * 60 * 1000 // 8 ชั่วโมง
+    }
+}));
+
+// Middleware เช็ค Admin
+function requireAdmin(req, res, next) {
+    if (req.session.isAdmin) return next();
+    res.status(401).json({ error: 'Unauthorized: Please login as admin' });
+}
+
+// 📌 ADMIN LOGIN
+app.post('/api/admin/login', (req, res) => {
+    const { username, password } = req.body;
+    const adminUser = process.env.ADMIN_USERNAME || 'admin';
+    const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (username === adminUser && password === adminPass) {
+        req.session.isAdmin = true;
+        return res.json({ success: true, message: 'Login successful' });
+    }
+    res.status(401).json({ error: 'Invalid username or password' });
+});
+
+// 📌 ADMIN LOGOUT
+app.post('/api/admin/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) return res.status(500).json({ error: 'Logout failed' });
+        res.json({ success: true, message: 'Logged out' });
+    });
+});
+
+// 📌 GET CURRENT API KEY (เฉพาะ Admin)
+app.get('/api/admin/leonardo-key', requireAdmin, (req, res) => {
+    const currentKey = process.env.LEONARDO_API_KEY || '';
+    // แสดงเฉพาะ 10 ตัวแรก + *** (เพื่อความปลอดภัย)
+    const masked = currentKey.length > 10 
+        ? currentKey.substring(0, 10) + '***' + currentKey.slice(-4)
+        : currentKey;
+    res.json({ 
+        key: currentKey,
+        masked: masked,
+        exists: !!currentKey
+    });
+});
+
+// 📌 UPDATE LEONARDO_API_KEY IN .env (เฉพาะ Admin)
+app.post('/api/admin/update-leonardo-key', requireAdmin, async (req, res) => {
+    try {
+        const { newKey } = req.body;
+        if (!newKey || newKey.trim() === '') {
+            return res.status(400).json({ error: 'API Key is required' });
+        }
+
+        const envPath = path.join(__dirname, '.env');
+        let envContent = fs.readFileSync(envPath, 'utf8');
+
+        // Replace หรือ Add LEONARDO_API_KEY
+        const keyRegex = /^LEONARDO_API_KEY=.*$/m;
+        if (keyRegex.test(envContent)) {
+            envContent = envContent.replace(keyRegex, `LEONARDO_API_KEY=${newKey.trim()}`);
+        } else {
+            envContent += `\nLEONARDO_API_KEY=${newKey.trim()}`;
+        }
+
+        fs.writeFileSync(envPath, envContent, 'utf8');
+
+        // 🔁 reload .env และ process.env แบบทันที (ไม่ต้อง restart server)
+        const dotenv = require('dotenv');
+        dotenv.config({ path: envPath });
+        process.env.LEONARDO_API_KEY = newKey.trim();
+
+        console.log(`[ADMIN] API Key updated at ${new Date().toISOString()}`);
+
+        res.json({ 
+            success: true, 
+            message: 'API Key updated successfully (active immediately)'
+        });
+
+    } catch (err) {
+        console.error('Update key error:', err);
+        res.status(500).json({ error: 'Failed to update .env file' });
+    }
+});
+
+// 📌 (Optional) ดูสถานะระบบ + เครดิต (เฉพาะ Admin)
+app.get('/api/admin/system-status', requireAdmin, (req, res) => {
+    res.json({
+        status: 'OK',
+        leonardoConfigured: !!process.env.LEONARDO_API_KEY,
+        nodeVersion: process.version,
+        platform: process.platform,
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
+
+
+
 app.use('/uploads', express.static(uploadDir));
 app.use((req, res) => res.status(404).json({ error: 'ไม่พบ endpoint', path: req.originalUrl }));
 app.use((err, req, res, next) => { 
