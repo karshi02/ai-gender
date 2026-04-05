@@ -4,93 +4,86 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>AI Photo Booth ✦ Thailand</title>
+<link rel="icon" type="image/png" href="img/icon_ai-gender.png">
+<link rel="shortcut icon" type="image/png" href="img/icon_ai-gender.png">
+<!-- สำหรับ Safari/iOS -->
+<link rel="apple-touch-icon" href="img/icon_ai-gender.png">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs2-fix@0.0.1/qrcode.min.js"></script>
 <style>
+/* ========== CSS เหมือนเดิม (ไม่เปลี่ยนแปลง) ========== */
 :root {
   --gold: #D4AF37;
   --gold-light: #F0D060;
-  --black: #0A0A0A;
-  --dark: #111118;
-  --surface: #1A1A24;
-  --surface2: #22223A;
+  --black: #050508;
+  --dark: #0D0D14;
+  --surface: #141420;
+  --surface2: #1E1E30;
   --text: #F0EEE8;
-  --text-muted: #888;
+  --text-muted: #666;
   --accent: #FF3C6E;
   --green: #00E5A0;
-  --radius: 20px;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; overflow:hidden; }
-
+html { scroll-behavior: smooth; }
 body {
   font-family: 'Kanit', sans-serif;
   background: var(--black);
   color: var(--text);
   user-select: none;
+  overflow-x: hidden;
 }
 
+/* ══ GLOBAL BG ══ */
 .bg-grid {
-  position: fixed; inset: 0; z-index: 0;
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background-image:
-    linear-gradient(rgba(212,175,55,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212,175,55,0.04) 1px, transparent 1px);
-  background-size: 50px 50px;
-  pointer-events: none;
+    linear-gradient(rgba(212,175,55,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,175,55,0.035) 1px, transparent 1px);
+  background-size: 60px 60px;
 }
-.bg-glow {
-  position: fixed; z-index: 0; pointer-events: none;
-  border-radius: 50%; filter: blur(120px); opacity: 0.12;
-}
-.bg-glow-1 { width:600px; height:600px; top:-200px; left:-100px; background: var(--gold); }
-.bg-glow-2 { width:400px; height:400px; bottom:-100px; right:-100px; background: var(--accent); }
+.bg-glow { position: fixed; z-index: 0; pointer-events: none; border-radius: 50%; filter: blur(140px); }
+.bg-glow-1 { width:700px; height:700px; top:-250px; left:-150px; background: rgba(212,175,55,0.1); }
+.bg-glow-2 { width:500px; height:500px; bottom:-150px; right:-150px; background: rgba(255,60,110,0.08); }
 
-/* Video background — welcome screen only */
-.welcome-video-bg {
-  position: absolute; inset: 0; z-index: 0; overflow: hidden;
-}
-.welcome-video-bg video {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-  display: block;
-}
-.welcome-video-bg::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(10, 10, 10, 0.62);
-  pointer-events: none;
-}
-#screen-welcome { position: relative; overflow: hidden; }
-
+/* ══ APP CONTAINER ══ */
 #app {
   position: relative; z-index: 1;
-  width: 100vw; height: 100vh;
-  display: flex; flex-direction: column;
+  width: 100vw; min-height: 100vh;
 }
 
+/* ══ SCREEN SYSTEM ══ */
 .screen {
-  position: absolute; inset: 0;
+  position: fixed; inset: 0;
   display: flex; flex-direction: column; align-items: center;
   overflow-y: auto; overflow-x: hidden;
   opacity: 0; pointer-events: none;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateY(8px);
+  z-index: 10;
 }
-.screen.active { opacity: 1; pointer-events: all; }
+.screen.active {
+  opacity: 1; pointer-events: all;
+  transform: translateY(0);
+}
 
+/* ══ HEADER ══ */
 .booth-header {
-  width: 100%; padding: 18px 24px;
+  width: 100%; padding: 16px 24px;
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid rgba(212,175,55,0.15);
+  border-bottom: 1px solid rgba(212,175,55,0.12);
   flex-shrink: 0;
+  background: rgba(5,5,8,0.8);
+  backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 100;
 }
 .logo {
-  font-size: 18px; font-weight: 900; letter-spacing: 1px;
-  color: var(--gold);
-  display: flex; align-items: center; gap: 8px;
+  font-size: 17px; font-weight: 900; letter-spacing: 1px;
+  color: var(--gold); display: flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: opacity 0.2s;
 }
+.logo:hover { opacity: 0.8; }
 .logo span { color: var(--text); font-weight: 300; }
 .step-dots { display: flex; gap: 8px; }
 .step-dot {
@@ -98,510 +91,590 @@ body {
   background: var(--surface2); transition: all 0.4s;
 }
 .step-dot.done { background: var(--gold); }
-.step-dot.active { background: var(--gold); box-shadow: 0 0 10px var(--gold); width: 24px; border-radius: 4px; }
+.step-dot.active {
+  background: var(--gold); box-shadow: 0 0 10px var(--gold);
+  width: 24px; border-radius: 4px;
+}
+.btn-back {
+  padding: 8px 16px; border-radius: 10px;
+  background: var(--surface2); color: var(--text);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 13px; font-weight: 600; font-family: 'Kanit', sans-serif;
+  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+}
+.btn-back:hover { background: rgba(255,255,255,0.08); transform: translateX(-2px); }
 
-/* ══ SCREEN 1: WELCOME — Pro redesign ══ */
+/* ══════════════════════════════════
+   SCREEN 1: WELCOME (scroll)
+══════════════════════════════════ */
 #screen-welcome {
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 1; pointer-events: all;
+  transform: none;
+}
+
+.hero {
+  position: relative;
+  width: 100%; min-height: 100vh;
+  display: flex; flex-direction: column;
   justify-content: flex-end; align-items: flex-start;
+  overflow: hidden;
   padding: 0;
 }
-
-/* Gradient overlay — dark bottom, lighter top */
-.welcome-video-bg::after {
-  content: '';
-  position: absolute; inset: 0;
+.hero-video-bg {
+  position: absolute; inset: 0; overflow: hidden;
+  background: linear-gradient(135deg, #0a0a15, #000000);
+}
+.hero-video-bg video {
+  width:100%; height:100%; object-fit:cover;
+  pointer-events:none; display:block;
+}
+.hero-video-bg::after {
+  content:''; position:absolute; inset:0;
   background:
-    linear-gradient(to top,  rgba(5,5,8,0.97) 0%, rgba(5,5,8,0.65) 45%, rgba(5,5,8,0.15) 100%),
-    linear-gradient(to right, rgba(5,5,8,0.5) 0%, transparent 60%);
-  pointer-events: none;
+    linear-gradient(to top, rgba(5,5,8,1) 0%, rgba(5,5,8,0.75) 40%, rgba(5,5,8,0.2) 100%),
+    linear-gradient(to right, rgba(5,5,8,0.6) 0%, transparent 55%);
+  pointer-events:none;
 }
 
-/* Top bar — logo + contact */
-.welcome-topbar {
+.hero-topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between;
   padding: 28px 48px;
 }
-.welcome-logo {
+.hero-badge {
   font-family: 'Space Mono', monospace;
-  font-size: 13px; letter-spacing: 4px; color: var(--gold);
-  text-transform: uppercase; font-weight: 700;
-  display: flex; align-items: center; gap: 10px;
-}
-.welcome-logo::before {
-  content: '';
-  width: 28px; height: 1px; background: var(--gold); display: block;
-}
-.welcome-contact {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px; letter-spacing: 2px; color: rgba(240,238,232,0.5);
-  text-transform: uppercase;
+  font-size: 10px; letter-spacing: 2px; color: rgba(240,238,232,0.4);
+  text-transform: uppercase; padding: 6px 16px;
+  border: 1px solid rgba(212,175,55,0.2); border-radius: 2px;
 }
 
-/* Main content — bottom-left anchor like 360booththailand */
-.welcome-content {
+.hero-content {
   position: relative; z-index: 5;
-  width: 100%;
-  padding: 0 48px 64px;
-  display: flex; flex-direction: column; align-items: flex-start;
-  animation: welcomeFadeUp 1.1s cubic-bezier(.22,1,.36,1) both;
+  width: 100%; padding: 0 48px 72px;
+  animation: fadeUp 1s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(40px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 
-@keyframes welcomeFadeUp {
-  from { opacity: 0; transform: translateY(40px); }
-  to   { opacity: 1; transform: translateY(0); }
+.hero-title {
+  font-size: clamp(52px, 8vw, 120px);
+  font-weight: 900; line-height: 0.9;
+  letter-spacing: -3px; color: #fff;
+  margin-bottom: 24px;
+  animation: fadeUp 1s 0.2s both;
+}
+.hero-title .ai { background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.hero-title .sub {
+  display: block; font-weight: 300; letter-spacing: 0;
+  font-size: clamp(24px, 3.5vw, 52px);
+  color: rgba(255,255,255,0.3); margin-top: 8px;
 }
 
-.welcome-eyebrow {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px; letter-spacing: 5px; color: var(--gold);
-  text-transform: uppercase; margin-bottom: 20px;
-  display: flex; align-items: center; gap: 12px;
-  animation: welcomeFadeUp 1.1s .15s cubic-bezier(.22,1,.36,1) both;
-}
-.welcome-eyebrow::before {
-  content: '';
-  width: 36px; height: 1px; background: var(--gold); display: block;
+.hero-desc {
+  font-size: clamp(14px, 1.4vw, 17px);
+  color: rgba(240,238,232,0.55); line-height: 1.7;
+  max-width: 480px; margin-bottom: 40px;
+  font-weight: 300; animation: fadeUp 1s 0.3s both;
 }
 
-.welcome-title {
-  font-size: clamp(48px, 7.5vw, 110px);
-  font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -2px;
-  color: #fff;
-  margin-bottom: 28px;
-  text-align: left;
-  animation: welcomeFadeUp 1.1s .25s cubic-bezier(.22,1,.36,1) both;
+.hero-chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 44px; animation: fadeUp 1s 0.4s both;
 }
-.welcome-title .ai-text {
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 60%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  display: inline;
-}
-.welcome-title .line2 {
-  display: block;
-  color: rgba(255,255,255,0.35);
-  font-weight: 300;
-  font-size: clamp(28px, 4vw, 56px);
-  letter-spacing: 0px;
-  margin-top: 4px;
-}
-
-.welcome-subtitle {
-  font-size: clamp(14px, 1.5vw, 18px);
-  color: rgba(240,238,232,0.6);
-  line-height: 1.7;
-  max-width: 500px;
-  margin-bottom: 48px;
-  font-weight: 300;
-  letter-spacing: 0.3px;
-  animation: welcomeFadeUp 1.1s .35s cubic-bezier(.22,1,.36,1) both;
-}
-
-/* Chips row */
-.welcome-chips {
-  display: flex; flex-wrap: wrap; gap: 10px;
-  margin-bottom: 48px;
-  animation: welcomeFadeUp 1.1s .45s cubic-bezier(.22,1,.36,1) both;
-}
-.feat-chip {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 20px;
-  border-radius: 3px;
-  border: 1px solid rgba(212,175,55,0.2);
+.chip {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 18px; border-radius: 2px;
+  border: 1px solid rgba(212,175,55,0.18);
   background: rgba(212,175,55,0.04);
-  font-size: 12px; font-weight: 400;
-  color: rgba(240,238,232,0.7);
-  letter-spacing: 1.5px;
-  font-family: 'Space Mono', monospace;
-  text-transform: uppercase;
-  transition: all 0.3s;
+  font-size: 11px; font-weight: 400;
+  color: rgba(240,238,232,0.6);
+  letter-spacing: 1.5px; font-family: 'Space Mono', monospace;
+  text-transform: uppercase; transition: all 0.3s;
 }
-.feat-chip:hover {
-  border-color: var(--gold);
-  background: rgba(212,175,55,0.1);
-  color: var(--gold);
+.chip:hover { border-color: var(--gold); color: var(--gold); background: rgba(212,175,55,0.08); }
+.chip-dot { width:4px; height:4px; border-radius:50%; background:var(--gold); }
+
+.hero-cta {
+  display: flex; align-items: center; gap: 28px;
+  animation: fadeUp 1s 0.5s both;
 }
-.feat-chip .chip-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--gold); flex-shrink: 0;
+.btn-hero {
+  background: var(--gold); color: var(--black);
+  border: none; padding: 18px 56px; border-radius: 2px;
+  font-size: 14px; font-weight: 700; font-family: 'Kanit', sans-serif;
+  cursor: pointer; letter-spacing: 2px; text-transform: uppercase;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.btn-hero:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(212,175,55,0.4); }
+.cta-hint {
+  font-family: 'Space Mono', monospace; font-size: 12px;
+  color: rgba(240,238,232,0.4); display: flex; align-items: center; gap: 8px;
+}
+.cta-hint::before { content:'—'; color:var(--gold); }
+
+.scroll-indicator {
+  position: absolute; bottom: 32px; right: 48px; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  animation: fadeUp 1.5s 0.8s both;
+}
+.scroll-indicator span {
+  font-family: 'Space Mono', monospace; font-size: 8px;
+  letter-spacing: 3px; color: rgba(240,238,232,0.25);
+  text-transform: uppercase; writing-mode: vertical-rl;
+}
+.scroll-line {
+  width: 1px; height: 52px;
+  background: linear-gradient(to bottom, var(--gold), transparent);
+  animation: scrollPulse 2.5s ease-in-out infinite;
+}
+@keyframes scrollPulse {
+  0%,100% { opacity:0.25; transform:scaleY(1); }
+  50%      { opacity:1; transform:scaleY(1.08); }
 }
 
-/* CTA button row */
-.welcome-cta {
-  display: flex; align-items: center; gap: 32px;
-  animation: welcomeFadeUp 1.1s .55s cubic-bezier(.22,1,.36,1) both;
+/* FEATURES SECTION */
+.features-section {
+  width: 100%; padding: 100px 48px;
+  background: var(--black);
+  position: relative;
 }
-.btn-start {
-  background: var(--gold);
-  color: var(--black); border: none;
-  padding: 18px 52px;
-  border-radius: 3px;
-  font-size: 15px; font-weight: 700;
+.features-section::before {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:1px; background: linear-gradient(90deg, transparent, rgba(212,175,55,0.3), transparent);
+}
+
+.section-eyebrow {
+  font-family: 'Space Mono', monospace; font-size: 10px;
+  letter-spacing: 5px; color: var(--gold); text-transform: uppercase;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.section-eyebrow::before { content:''; width:40px; height:1px; background:var(--gold); display:block; }
+.section-title {
+  font-size: clamp(32px, 4vw, 56px); font-weight: 900;
+  line-height: 1; letter-spacing: -1px; margin-bottom: 64px;
+  max-width: 600px;
+}
+.section-title em { color: var(--gold); font-style: normal; }
+
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 2px; max-width: 1100px;
+}
+.feat-card {
+  background: var(--surface); padding: 40px 36px;
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.feat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:2px; background: linear-gradient(90deg, var(--gold), transparent);
+  opacity:0; transition:opacity 0.3s;
+}
+.feat-card:hover { background: var(--surface2); }
+.feat-card:hover::before { opacity:1; }
+.feat-num {
+  font-family: 'Space Mono', monospace; font-size: 11px;
+  color: var(--gold); letter-spacing: 2px; margin-bottom: 20px;
+}
+.feat-icon { font-size: 36px; margin-bottom: 16px; display: block; }
+.feat-title { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+.feat-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; font-weight: 300; }
+
+/* THEMES MARQUEE */
+.themes-section {
+  width: 100%; padding: 100px 48px;
+  background: var(--dark); position: relative;
+}
+.themes-marquee-wrap {
+  overflow: hidden; margin-top: 48px;
+  mask: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+}
+.themes-marquee {
+  display: flex; gap: 16px;
+  animation: marqueeScroll 30s linear infinite;
+  width: max-content;
+}
+.themes-marquee:hover { animation-play-state: paused; }
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-card {
+  width: 180px; height: 240px; border-radius: 12px; overflow: hidden;
+  flex-shrink: 0; position: relative;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: transform 0.3s;
+}
+.marquee-card:hover { transform: translateY(-4px) scale(1.02); }
+.marquee-card .mc-bg {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 60px;
+}
+.marquee-card .mc-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 10px; text-align: center;
+  background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+  font-size: 12px; font-weight: 600;
+}
+.marquee-card .mc-en {
+  font-family: 'Space Mono', monospace; font-size: 9px;
+  color: rgba(255,255,255,0.4); display: block; margin-top: 2px;
+}
+
+/* STATS SECTION */
+.stats-section {
+  width: 100%; padding: 80px 48px;
+  background: var(--black);
+  border-top: 1px solid rgba(212,175,55,0.12);
+  border-bottom: 1px solid rgba(212,175,55,0.12);
+}
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px; max-width: 900px; }
+.stat-item { text-align: center; }
+.stat-num {
+  font-size: clamp(40px, 5vw, 64px); font-weight: 900;
+  color: var(--gold); line-height: 1;
+  font-family: 'Space Mono', monospace;
+}
+.stat-label { font-size: 13px; color: var(--text-muted); margin-top: 8px; letter-spacing: 1px; }
+
+/* CTA SECTION */
+.cta-section {
+  width: 100%; padding: 120px 48px; text-align: center;
+  background: var(--dark); position: relative; overflow: hidden;
+}
+.cta-section .section-title { max-width: none; margin: 0 auto 12px; }
+.cta-subtitle { font-size: 16px; color:var(--text-muted); margin-bottom: 48px; font-weight:300; }
+.btn-cta-large {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--black); border: none; padding: 20px 72px;
+  border-radius: 2px; font-size: 16px; font-weight: 700;
   font-family: 'Kanit', sans-serif; cursor: pointer;
   letter-spacing: 2px; text-transform: uppercase;
   transition: all 0.3s;
-  position: relative; overflow: hidden;
+  box-shadow: 0 8px 40px rgba(212,175,55,0.3);
 }
-.btn-start::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(255,255,255,0); transition: background 0.3s;
-}
-.btn-start:hover { transform: translateY(-2px); box-shadow: 0 12px 48px rgba(212,175,55,0.45); }
-.btn-start:hover::after { background: rgba(255,255,255,0.08); }
-.btn-start:active { transform: translateY(0); }
+.btn-cta-large:hover { transform: translateY(-3px); box-shadow: 0 20px 60px rgba(212,175,55,0.5); }
 
-.btn-secondary-link {
-  color: rgba(240,238,232,0.5);
-  font-size: 13px; font-weight: 400;
-  letter-spacing: 1px;
-  font-family: 'Space Mono', monospace;
-  cursor: default;
-  display: flex; align-items: center; gap: 8px;
+/* FOOTER */
+.site-footer {
+  width: 100%; padding: 32px 48px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  display: flex; justify-content: space-between; align-items: center;
 }
-.btn-secondary-link::before {
-  content: '—'; color: var(--gold);
-}
-
-/* Scroll indicator */
-.welcome-scroll {
-  position: absolute; bottom: 36px; right: 48px; z-index: 10;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  animation: welcomeFadeUp 1.4s .8s cubic-bezier(.22,1,.36,1) both;
-}
-.welcome-scroll span {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; letter-spacing: 3px;
-  color: rgba(240,238,232,0.3); text-transform: uppercase;
-  writing-mode: vertical-rl;
-}
-.scroll-line {
-  width: 1px; height: 48px;
-  background: linear-gradient(to bottom, var(--gold), transparent);
-  animation: scrollPulse 2s ease-in-out infinite;
-}
-@keyframes scrollPulse {
-  0%,100% { opacity: 0.3; transform: scaleY(1); }
-  50%      { opacity: 1;   transform: scaleY(1.1); }
-}
-
-/* Step counter — bottom right */
-.welcome-counter {
-  position: absolute; bottom: 64px; right: 48px; z-index: 10;
-  font-family: 'Space Mono', monospace;
-  font-size: 11px; color: rgba(240,238,232,0.25);
-  letter-spacing: 2px;
-}
-
-@media (max-width: 768px) {
-  .welcome-topbar { padding: 20px 24px; }
-  .welcome-content { padding: 0 24px 48px; }
-  .welcome-title { font-size: clamp(40px, 11vw, 72px); letter-spacing: -1px; }
-  .welcome-scroll { right: 24px; }
-  .welcome-counter { right: 24px; bottom: 48px; }
-  .welcome-contact { display: none; }
-}
+.footer-logo { font-family:'Space Mono',monospace; font-size:11px; color:rgba(255,255,255,0.2); letter-spacing:3px; }
+.footer-copy { font-size:11px; color:rgba(255,255,255,0.15); }
 
 /* SCREEN 2: PHOTO */
-#screen-photo { padding: 0; justify-content: flex-start; }
+#screen-photo { background: var(--black); }
 .photo-body {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  padding: 20px 20px 24px; gap: 16px; width: 100%;
+  padding: 24px 20px 32px; gap: 16px; width: 100%;
 }
 .section-label {
-  font-size: 12px; letter-spacing: 3px; color: var(--gold);
+  font-size: 11px; letter-spacing: 3px; color: var(--gold);
   font-family: 'Space Mono', monospace; text-transform: uppercase;
   align-self: flex-start; margin-left: 4px;
 }
 .camera-frame {
-  width: 100%; max-width: 420px;
-  aspect-ratio: 3/4;
-  border-radius: 24px; overflow: hidden;
+  width: 100%; max-width: 400px;
+  aspect-ratio: 3/4; border-radius: 20px; overflow: hidden;
   background: var(--surface);
-  border: 1px solid rgba(212,175,55,0.2);
+  border: 1px solid rgba(212,175,55,0.15);
   position: relative; flex-shrink: 0;
 }
-.camera-frame video,
-.camera-frame img {
-  width: 100%; height: 100%; object-fit: cover;
-}
+.camera-frame video, .camera-frame img { width:100%; height:100%; object-fit:cover; }
 .camera-placeholder {
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; color: var(--text-muted);
+  width:100%; height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:14px; color:var(--text-muted);
 }
-.camera-placeholder .icon { font-size: 56px; opacity: 0.5; }
-.camera-placeholder p { font-size: 14px; opacity: 0.6; }
+.camera-placeholder .icon { font-size:52px; opacity:0.4; }
+.camera-placeholder p { font-size:13px; opacity:0.5; }
 
 .countdown-overlay {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.7);
-  display: none; align-items: center; justify-content: center;
-  z-index: 10;
+  position:absolute; inset:0; background:rgba(0,0,0,0.75);
+  display:none; align-items:center; justify-content:center; z-index:10;
 }
-.countdown-overlay.show { display: flex; }
+.countdown-overlay.show { display:flex; }
 .countdown-number {
-  font-size: 120px; font-weight: 900;
-  color: var(--gold);
-  text-shadow: 0 0 40px var(--gold), 0 0 80px rgba(212,175,55,0.5);
+  font-size:120px; font-weight:900; color:var(--gold);
+  text-shadow: 0 0 60px var(--gold);
   animation: countPulse 0.9s ease-out;
 }
 @keyframes countPulse {
-  0% { transform: scale(1.3); opacity: 0.5; }
-  50% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.7; }
+  0%   { transform:scale(1.4); opacity:0.5; }
+  50%  { transform:scale(1); opacity:1; }
+  100% { transform:scale(0.95); opacity:0.7; }
 }
-
 .flash-overlay {
-  position: absolute; inset: 0;
-  background: white; opacity: 0;
-  pointer-events: none; z-index: 20;
-  transition: opacity 0.05s;
+  position:absolute; inset:0; background:white; opacity:0;
+  pointer-events:none; z-index:20;
 }
 .flash-overlay.flash { animation: flashAnim 0.3s ease-out; }
-@keyframes flashAnim {
-  0% { opacity: 1; } 100% { opacity: 0; }
-}
+@keyframes flashAnim { 0%{opacity:1} 100%{opacity:0} }
 
-.photo-actions { display: flex; gap: 12px; width: 100%; max-width: 420px; }
+.photo-actions { display:flex; gap:10px; width:100%; max-width:400px; }
 .btn-action {
-  flex: 1; padding: 14px; border-radius: 14px;
-  border: none; cursor: pointer; font-size: 14px; font-weight: 600;
-  font-family: 'Kanit', sans-serif; transition: all 0.25s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  flex:1; padding:14px; border-radius:12px; border:none; cursor:pointer;
+  font-size:13px; font-weight:600; font-family:'Kanit',sans-serif;
+  transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:7px;
 }
-.btn-primary { background: var(--gold); color: var(--black); }
-.btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
-.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid rgba(255,255,255,0.08); }
-.btn-secondary:hover { background: rgba(255,255,255,0.1); }
-.btn-danger { background: rgba(255,60,110,0.15); color: var(--accent); border: 1px solid rgba(255,60,110,0.2); }
+.btn-primary { background:var(--gold); color:var(--black); }
+.btn-primary:hover { background:var(--gold-light); transform:translateY(-1px); }
+.btn-secondary { background:var(--surface2); color:var(--text); border:1px solid rgba(255,255,255,0.07); }
+.btn-secondary:hover { background:rgba(255,255,255,0.08); }
+.btn-danger { background:rgba(255,60,110,0.1); color:var(--accent); border:1px solid rgba(255,60,110,0.2); }
 
 .https-notice {
-  background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3);
-  border-radius: 12px; padding: 10px 14px;
-  font-size: 12px; color: #ffc107; text-align: center;
-  width: 100%; max-width: 420px; display: none;
+  background:rgba(255,193,7,0.08); border:1px solid rgba(255,193,7,0.25);
+  border-radius:10px; padding:10px 14px; font-size:12px; color:#ffc107;
+  text-align:center; width:100%; max-width:400px; display:none;
 }
 
 /* SCREEN 3: THEME */
-#screen-theme { padding: 0; justify-content: flex-start; }
-.theme-body {
-  flex: 1; width: 100%; padding: 12px 20px 100px;
-  overflow-y: auto;
+#screen-theme { background: var(--black); }
+.theme-body { flex:1; width:100%; padding:16px 20px 110px; overflow-y:auto; }
+
+.preview-split {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  width:100%; max-width:440px; margin:0 auto 20px;
 }
-.theme-preview {
-  width: 100%; max-width: 420px; margin: 0 auto 16px;
-  aspect-ratio: 3/4; border-radius: 20px; overflow: hidden;
-  background: var(--surface); border: 1px solid rgba(212,175,55,0.2);
-  position: relative; max-height: 200px;
+.preview-split-card { border-radius:12px; overflow:hidden; position:relative; aspect-ratio:3/4; }
+.preview-split-card img { width:100%; height:100%; object-fit:cover; display:block; }
+.preview-split-card .psc-label {
+  position:absolute; bottom:0; left:0; right:0; padding:8px; text-align:center;
+  font-size:10px; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px);
+  font-family:'Space Mono',monospace; letter-spacing:1px;
 }
-.theme-preview img { width: 100%; height: 100%; object-fit: cover; }
+.preview-split-card .psc-placeholder {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-size:28px; background:var(--surface2);
+}
 
 .theme-grid-label {
-  font-size: 13px; color: var(--text-muted); margin-bottom: 12px;
-  text-align: center;
+  font-size:12px; color:var(--text-muted); margin-bottom:14px;
+  text-align:center; font-family:'Space Mono',monospace; letter-spacing:1px;
 }
-
-.themes-scroll {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  max-width: 420px; margin: 0 auto;
+.themes-grid {
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;
+  max-width:440px; margin:0 auto;
 }
 .theme-tile {
-  aspect-ratio: 1; border-radius: 14px;
-  background: var(--surface2);
-  border: 2px solid transparent;
-  cursor: pointer; transition: all 0.25s;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 6px; padding: 8px;
-  position: relative; overflow: hidden;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  aspect-ratio:1; border-radius:14px; background:var(--surface2);
+  border:2px solid transparent; cursor:pointer; transition:all 0.25s;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; padding:8px; position:relative; overflow:hidden;
 }
-.theme-tile::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 60%, rgba(212,175,55,0.08));
-  opacity: 0; transition: opacity 0.3s;
-}
-.theme-tile:hover::before { opacity: 1; }
-.theme-tile:hover { border-color: rgba(212,175,55,0.4); transform: translateY(-2px); }
+.theme-tile:hover { border-color:rgba(212,175,55,0.35); transform:translateY(-2px); }
 .theme-tile.selected {
-  border-color: var(--gold);
-  background: rgba(212,175,55,0.1);
-  box-shadow: 0 0 20px rgba(212,175,55,0.2);
+  border-color:var(--gold); background:rgba(212,175,55,0.09);
+  box-shadow:0 0 20px rgba(212,175,55,0.18);
 }
 .theme-tile .t-icon {
-  width: 42px; height: 42px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; pointer-events: none;
+  width:40px; height:40px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; pointer-events:none;
 }
-.theme-tile .t-name { font-size: 11px; font-weight: 600; text-align: center; line-height: 1.2; pointer-events: none; }
-.theme-tile .t-en { font-size: 9px; color: var(--text-muted); font-family: 'Space Mono', monospace; pointer-events: none; }
-.theme-tile.selected .t-name { color: var(--gold); }
+.theme-tile .t-name { font-size:11px; font-weight:600; text-align:center; line-height:1.2; pointer-events:none; }
+.theme-tile .t-en { font-size:9px; color:var(--text-muted); font-family:'Space Mono',monospace; pointer-events:none; }
+.theme-tile.selected .t-name { color:var(--gold); }
 
 .bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 16px 20px;
-  background: linear-gradient(to top, var(--black) 70%, transparent);
-  z-index: 50;
+  position:fixed; bottom:0; left:0; right:0; padding:16px 20px;
+  background:linear-gradient(to top, rgba(5,5,8,1) 60%, transparent);
+  z-index:50;
 }
 .btn-full {
-  width: 100%; max-width: 420px; margin: 0 auto;
-  display: block; padding: 16px;
-  border-radius: 16px; border: none; cursor: pointer;
-  font-size: 17px; font-weight: 700; font-family: 'Kanit', sans-serif;
-  background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: var(--black);
-  box-shadow: 0 6px 24px rgba(212,175,55,0.3);
-  transition: all 0.3s;
+  width:100%; max-width:440px; margin:0 auto; display:block; padding:16px;
+  border-radius:14px; border:none; cursor:pointer;
+  font-size:16px; font-weight:700; font-family:'Kanit',sans-serif;
+  background:linear-gradient(135deg, var(--gold), var(--gold-light));
+  color:var(--black); box-shadow:0 6px 24px rgba(212,175,55,0.28);
+  transition:all 0.3s;
 }
-.btn-full:hover:not(:disabled) { box-shadow: 0 8px 32px rgba(212,175,55,0.5); }
-.btn-full:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-full:hover:not(:disabled) { box-shadow:0 10px 36px rgba(212,175,55,0.45); }
+.btn-full:disabled { opacity:0.35; cursor:not-allowed; }
+
+/* Theme color backgrounds */
+.t-bg-space    { background:linear-gradient(135deg,#07071F,#12125E); }
+.t-bg-hero     { background:linear-gradient(135deg,#160A2A,#3D1875); }
+.t-bg-princess { background:linear-gradient(135deg,#2A0818,#7A1055); }
+.t-bg-samurai  { background:linear-gradient(135deg,#180808,#561010); }
+.t-bg-alien    { background:linear-gradient(135deg,#071A07,#0D5626); }
+.t-bg-pirate   { background:linear-gradient(135deg,#1A1005,#4A3005); }
+.t-bg-cyber    { background:linear-gradient(135deg,#060618,#080840); }
+.t-bg-wizard   { background:linear-gradient(135deg,#130A2A,#3A0A5A); }
+.t-bg-king     { background:linear-gradient(135deg,#1A1500,#4A3800); }
+.t-bg-ninja    { background:linear-gradient(135deg,#080808,#181818); }
+.t-bg-retro    { background:linear-gradient(135deg,#1A051A,#4A0835); }
+.t-bg-snow     { background:linear-gradient(135deg,#071A2E,#0A304A); }
 
 /* SCREEN 4: GENERATING */
 #screen-generating {
-  justify-content: center; align-items: center;
-  padding: 40px 24px; gap: 24px; text-align: center;
+  background:var(--black);
+  justify-content:center; align-items:center;
+  padding:40px 24px; gap:24px; text-align:center;
 }
-.gen-ring {
-  width: 120px; height: 120px; position: relative;
-}
-.gen-ring svg { animation: spinRing 2s linear infinite; }
-@keyframes spinRing { to { transform: rotate(360deg); } }
+.gen-ring { width:130px; height:130px; position:relative; }
+.gen-ring svg { animation:spinRing 2s linear infinite; width:100%; height:100%; }
+@keyframes spinRing { to { transform:rotate(360deg); } }
 .gen-ring-inner {
-  position: absolute; inset: 16px;
-  background: var(--surface);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 36px;
+  position:absolute; inset:18px; background:var(--surface);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:38px;
 }
-.gen-title { font-size: 24px; font-weight: 700; }
-.gen-subtitle { font-size: 14px; color: var(--text-muted); max-width: 280px; line-height: 1.6; }
-.gen-progress {
-  width: 260px; height: 3px; background: var(--surface2);
-  border-radius: 2px; overflow: hidden;
-}
+.gen-title { font-size:22px; font-weight:700; }
+.gen-subtitle { font-size:13px; color:var(--text-muted); max-width:260px; line-height:1.6; }
+.gen-progress { width:260px; height:2px; background:var(--surface2); border-radius:2px; overflow:hidden; }
 .gen-progress-bar {
-  height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light));
-  border-radius: 2px; transition: width 0.5s ease;
-  width: 0%;
+  height:100%; background:linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius:2px; transition:width 0.5s ease; width:0%;
 }
-.gen-steps {
-  display: flex; flex-direction: column; gap: 8px;
-  max-width: 280px; width: 100%;
-}
+.gen-steps { display:flex; flex-direction:column; gap:8px; max-width:280px; width:100%; }
 .gen-step {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 14px; border-radius: 10px;
-  background: var(--surface); opacity: 0.4; transition: all 0.4s;
-  font-size: 13px;
+  display:flex; align-items:center; gap:10px; padding:8px 14px;
+  border-radius:10px; background:var(--surface); opacity:0.35;
+  transition:all 0.4s; font-size:13px;
 }
-.gen-step.active { opacity: 1; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.2); }
-.gen-step.done { opacity: 0.8; }
-.gen-step .step-icon { font-size: 16px; width: 24px; text-align: center; }
+.gen-step.active { opacity:1; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.18); }
+.gen-step.done { opacity:0.7; }
+.gen-step .step-icon { font-size:15px; width:22px; text-align:center; }
+
+/* 4-image selection grid after gen */
+.gen-results-overlay {
+  display:none; flex-direction:column; align-items:center; gap:20px;
+  width:100%; padding:20px;
+}
+.gen-results-overlay.show { display:flex; }
+.gen-results-title { font-size:18px; font-weight:700; }
+.gen-results-subtitle { font-size:13px; color:var(--text-muted); }
+.gen-4grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  width:100%; max-width:440px;
+}
+.gen-4card {
+  aspect-ratio:1; border-radius:14px; overflow:hidden;
+  border:2px solid transparent; cursor:pointer; transition:all 0.25s;
+  position:relative;
+}
+.gen-4card img { width:100%; height:100%; object-fit:cover; display:block; }
+.gen-4card:hover { border-color:var(--gold); transform:scale(1.02); }
+.gen-4card.selected { border-color:var(--gold); box-shadow:0 0 24px rgba(212,175,55,0.35); }
+.gen-4card .card-check {
+  position:absolute; top:10px; right:10px;
+  width:28px; height:28px; border-radius:50%;
+  background:var(--gold); color:var(--black);
+  display:none; align-items:center; justify-content:center;
+  font-size:14px; font-weight:900;
+}
+.gen-4card.selected .card-check { display:flex; }
+.btn-select-result {
+  width:100%; max-width:440px; padding:16px;
+  background:linear-gradient(135deg, var(--gold), var(--gold-light));
+  color:var(--black); border:none; border-radius:14px;
+  font-size:16px; font-weight:700; font-family:'Kanit',sans-serif;
+  cursor:pointer; transition:all 0.3s;
+  box-shadow:0 6px 24px rgba(212,175,55,0.28);
+}
 
 /* SCREEN 5: RESULT */
-#screen-result { padding: 0; justify-content: flex-start; }
+#screen-result { background:var(--black); }
 .result-body {
-  flex: 1; width: 100%; padding: 12px 20px 120px;
-  display: flex; flex-direction: column; align-items: center; gap: 16px;
-  overflow-y: auto;
+  flex:1; width:100%; padding:16px 20px 120px;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  overflow-y:auto;
 }
 .result-frame {
-  width: 100%; max-width: 420px;
-  border-radius: 24px; overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.2);
-  position: relative;
+  width:100%; max-width:420px; border-radius:20px; overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.15);
+  position:relative;
 }
-.result-frame img { width: 100%; display: block; }
+.result-frame img { width:100%; display:block; }
 .result-badge {
-  position: absolute; top: 14px; right: 14px;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  border: 1px solid rgba(212,175,55,0.4); border-radius: 20px;
-  padding: 6px 12px; font-size: 11px; color: var(--gold);
-  font-family: 'Space Mono', monospace;
+  position:absolute; top:14px; right:14px;
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(10px);
+  border:1px solid rgba(212,175,55,0.35); border-radius:20px;
+  padding:6px 12px; font-size:10px; color:var(--gold);
+  font-family:'Space Mono',monospace;
 }
+
 .result-compare {
-  width: 100%; max-width: 420px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  width:100%; max-width:420px;
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
 }
-.compare-card {
-  border-radius: 14px; overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.06); position: relative;
-}
-.compare-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.compare-card { border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); position:relative; }
+.compare-card img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
 .compare-label {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 6px; text-align: center; font-size: 11px;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  position:absolute; bottom:0; left:0; right:0; padding:7px;
+  text-align:center; font-size:10px; font-family:'Space Mono',monospace;
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); letter-spacing:1px;
 }
 
 .qr-section {
-  width: 100%; max-width: 420px;
-  background: var(--surface);
-  border-radius: 20px; padding: 20px;
-  border: 1px solid rgba(212,175,55,0.15);
-  text-align: center;
+  width:100%; max-width:420px; background:var(--surface);
+  border-radius:18px; padding:20px; border:1px solid rgba(212,175,55,0.12);
+  text-align:center;
 }
-.qr-title { font-size: 14px; color: var(--text-muted); margin-bottom: 14px; }
+.qr-title { font-size:13px; color:var(--text-muted); margin-bottom:14px; }
 .qr-code {
-  width: 140px; height: 140px; margin: 0 auto 14px;
-  background: white; border-radius: 12px; padding: 10px;
-  display: flex; align-items: center; justify-content: center;
+  width:140px; height:140px; margin:0 auto 12px;
+  background:white; border-radius:10px; padding:8px;
+  display:flex; align-items:center; justify-content:center;
 }
-.qr-hint { font-size: 12px; color: var(--text-muted); }
+.qr-hint { font-size:11px; color:var(--text-muted); font-family:'Space Mono',monospace; }
 
-.share-row { display: flex; gap: 10px; width: 100%; max-width: 420px; }
+.share-row { display:flex; gap:10px; width:100%; max-width:420px; }
 .btn-share {
-  flex: 1; padding: 12px 8px; border-radius: 12px;
-  border: none; cursor: pointer; font-size: 13px; font-weight: 600;
-  font-family: 'Kanit', sans-serif; transition: all 0.2s;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex:1; padding:13px 8px; border-radius:12px; border:none; cursor:pointer;
+  font-size:12px; font-weight:600; font-family:'Kanit',sans-serif;
+  transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:4px;
 }
-.btn-share .s-icon { font-size: 20px; }
-.btn-share.download { background: var(--gold); color: var(--black); }
-.btn-share.share   { background: var(--surface2); color: var(--text); border: 1px solid rgba(255,255,255,0.1); }
-.btn-share.again   { background: rgba(255,60,110,0.12); color: var(--accent); border: 1px solid rgba(255,60,110,0.2); }
+.btn-share .s-icon { font-size:20px; }
+.btn-share.download { background:var(--gold); color:var(--black); }
+.btn-share.share    { background:var(--surface2); color:var(--text); border:1px solid rgba(255,255,255,0.08); }
+.btn-share.again    { background:rgba(255,60,110,0.1); color:var(--accent); border:1px solid rgba(255,60,110,0.2); }
+.btn-share:hover { transform:translateY(-2px); }
 
 .toast {
-  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-  background: var(--surface2); border: 1px solid rgba(255,255,255,0.1);
-  color: var(--text); padding: 12px 24px; border-radius: 50px;
-  font-size: 14px; z-index: 9999; white-space: nowrap;
-  animation: toastIn 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  pointer-events: none;
+  position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+  background:var(--surface2); border:1px solid rgba(255,255,255,0.08);
+  color:var(--text); padding:12px 24px; border-radius:50px;
+  font-size:13px; z-index:9999; white-space:nowrap;
+  animation:toastIn 0.3s ease;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  pointer-events:none;
 }
-.toast.success { border-color: rgba(0,229,160,0.4); color: var(--green); }
-.toast.error   { border-color: rgba(255,60,110,0.4); color: var(--accent); }
+.toast.success { border-color:rgba(0,229,160,0.35); color:var(--green); }
+.toast.error   { border-color:rgba(255,60,110,0.35); color:var(--accent); }
 @keyframes toastIn {
-  from { opacity:0; transform: translateX(-50%) translateY(10px); }
-  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+  from { opacity:0; transform:translateX(-50%) translateY(10px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
 }
 
-.t-bg-space    { background: linear-gradient(135deg,#0A0A2E,#1A1A4E); }
-.t-bg-hero     { background: linear-gradient(135deg,#1A0A2E,#3A1A6E); }
-.t-bg-princess { background: linear-gradient(135deg,#2E0A1A,#6E1A4E); }
-.t-bg-samurai  { background: linear-gradient(135deg,#1A0A0A,#4E1A1A); }
-.t-bg-alien    { background: linear-gradient(135deg,#0A1A0A,#1A4E2E); }
-.t-bg-pirate   { background: linear-gradient(135deg,#1A150A,#3E2A0A); }
-.t-bg-cyber    { background: linear-gradient(135deg,#0A0A1A,#1A0A3E); }
-.t-bg-wizard   { background: linear-gradient(135deg,#150A2E,#2E0A4E); }
-.t-bg-king     { background: linear-gradient(135deg,#1A1500,#3E3200); }
-.t-bg-ninja    { background: linear-gradient(135deg,#0A0A0A,#1A1A1A); }
-.t-bg-retro    { background: linear-gradient(135deg,#1A0A1A,#3E0A2E); }
-.t-bg-snow     { background: linear-gradient(135deg,#0A1A2E,#0A2E4E); }
+@media (max-width:900px) {
+  .hero-topbar, .features-section, .themes-section, .stats-section, .cta-section, .site-footer {
+    padding-left:24px; padding-right:24px;
+  }
+  .hero-content { padding:0 24px 60px; }
+  .features-grid { grid-template-columns:1fr; gap:2px; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); gap:32px; }
+}
+@media (max-width:600px) {
+  .hero-title { font-size:clamp(44px,12vw,72px); letter-spacing:-2px; }
+  .hero-topbar { padding:20px 20px; }
+  .hero-badge { display:none; }
+  .hero-content { padding:0 20px 56px; }
+  .features-section, .themes-section, .stats-section, .cta-section { padding:64px 20px; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); gap:24px; }
+  .site-footer { flex-direction:column; gap:8px; text-align:center; padding:24px 20px; }
+}
 
-@media (min-height: 800px) {
-  .theme-preview { max-height: 260px; }
-}
-@media (max-width: 380px) {
-  .themes-scroll { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-}
 </style>
 </head>
 <body>
@@ -612,362 +685,427 @@ body {
 
 <div id="app">
 
-  <!-- SCREEN 1: WELCOME -->
-  <div class="screen active" id="screen-welcome">
-
-    <!-- Video background -->
-    <div class="welcome-video-bg" aria-hidden="true">
-      <video
-        src="/videos/360-Promo-Video-Seethrough-Wedding.mp4"
+<!-- SCREEN 1: WELCOME -->
+<div class="screen active" id="screen-welcome">
+  <section class="hero">
+    <div class="hero-video-bg">
+      <video src="/videos/360-Promo-Video-Seethrough-Wedding.mp4"
         autoplay loop muted playsinline preload="auto"
-        disablepictureinpicture
-        controlslist="nodownload nofullscreen noremoteplayback"
-        tabindex="-1">
-      </video>
+        disablepictureinpicture tabindex="-1"
+        onerror="this.style.display='none'"></video>
     </div>
-
-    <!-- Top bar -->
-    <div class="welcome-topbar">
-      <!-- <div class="welcome-logo">AI Photo Booth</div> -->
-      <div class="welcome-contact">Thailand · 2026</div>
+    <div class="hero-topbar">
+      <div class="hero-badge">Thailand · 2026</div>
     </div>
-
-    <!-- Main content — bottom-left -->
-    <div class="welcome-content">
-      <!-- <div class="welcome-eyebrow">Image-to-Image AI Technology</div> -->
-
-      <h3 class="welcome-title">
-        <br>เปลี่ยนตัวตนของคุณ<br>ด้วย <span class="ai-text">AI</span>
-        <span class="line2">Photo Booth Thailand</span>
-      </h3>
-
-      <p class="welcome-subtitle">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        <span>เปลี่ยนตัวตน</span><br>ด้วย <span class="ai">AI</span>
+        <span><span class="sub">Photo Booth Thailand</span></span>
+      </h1>
+      <p class="hero-desc">
         ถ่ายรูป เลือกธีม รับภาพสวยทันที<br>
-        เทคโนโลยี AI สร้างภาพ ใน 15 วินาที
+        เทคโนโลยี AI สร้างภาพระดับมืออาชีพใน 15 วินาที
       </p>
-
-      <div class="welcome-chips">
-        <div class="feat-chip"><span class="chip-dot"></span>ถ่ายหรืออัปโหลด</div>
-        <div class="feat-chip"><span class="chip-dot"></span>12 ธีมสุดปัง</div>
-        <div class="feat-chip"><span class="chip-dot"></span>สร้างใน 15 วิ</div>
-        <div class="feat-chip"><span class="chip-dot"></span>รับรูปทันที</div>
+      <div class="hero-chips">
+        <div class="chip"><span class="chip-dot"></span>ถ่ายหรืออัปโหลด</div>
+        <div class="chip"><span class="chip-dot"></span>12 ธีมสุดปัง</div>
+        <div class="chip"><span class="chip-dot"></span>สร้างใน 15 วิ</div>
+        <div class="chip"><span class="chip-dot"></span>รับรูปทันที</div>
       </div>
-
-      <div class="welcome-cta">
-        <button class="btn-start" onclick="gotoScreen('photo')">เริ่มต้นใช้งาน</button>
-        <span class="btn-secondary-link">กดเพื่อเริ่ม</span>
+      <div class="hero-cta">
+        <button class="btn-hero" onclick="gotoScreen('photo')">เริ่มต้นใช้งาน</button>
+        <span class="cta-hint">กดเพื่อเริ่ม</span>
       </div>
     </div>
-
-    <!-- Scroll indicator -->
-    <div class="welcome-scroll">
+    <div class="scroll-indicator">
       <div class="scroll-line"></div>
       <span>scroll</span>
     </div>
+  </section>
 
-  </div>
-
-  <!-- SCREEN 2: PHOTO -->
-  <div class="screen" id="screen-photo">
-    <div class="booth-header">
-      <div class="logo">AI <span>Photo</span> Booth</div>
-      <div class="step-dots">
-        <div class="step-dot active" id="dot1"></div>
-        <div class="step-dot" id="dot2"></div>
-        <div class="step-dot" id="dot3"></div>
+  <section class="features-section">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-title">ง่ายแค่ <em>3 ขั้นตอน</em></h2>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-num">01</div>
+        <span class="feat-icon">📸</span>
+        <div class="feat-title">ถ่ายรูปหรืออัปโหลด</div>
+        <div class="feat-desc">ใช้กล้องหน้าถ่ายภาพตัวเองแบบ real-time หรืออัปโหลดรูปที่มีอยู่แล้วก็ได้</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">02</div>
+        <span class="feat-icon">🎭</span>
+        <div class="feat-title">เลือกธีมที่ชอบ</div>
+        <div class="feat-desc">มี 12 ธีมให้เลือก ตั้งแต่นักบินอวกาศ ซูเปอร์ฮีโร่ เจ้าหญิง ซามูไร ไปจนถึงไซเบอร์พังค์</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">03</div>
+        <span class="feat-icon">✨</span>
+        <div class="feat-title">รับภาพ AI คุณภาพสูง</div>
+        <div class="feat-desc">ระบบ AI สร้างภาพใน 15 วินาที ดาวน์โหลดได้ทันที หรือสแกน QR Code เพื่อรับภาพ</div>
       </div>
     </div>
-    <div class="photo-body">
-      <div class="section-label">01 — ถ่ายรูปของคุณ</div>
+  </section>
 
-      <div id="httpsNotice" class="https-notice">
-        ⚠️ กล้องต้องใช้ HTTPS — กรุณาเปิดด้วย <strong>https://</strong> หรือ localhost
-      </div>
-
-      <div class="camera-frame" id="cameraFrame">
-        <div class="camera-placeholder" id="cameraPlaceholder">
-          <div class="icon">🤳</div>
-          <p>กดถ่ายรูปหรืออัปโหลด</p>
-        </div>
-        <video id="videoEl" style="display:none" autoplay playsinline muted></video>
-        <img id="photoPreview" style="display:none" alt="">
-        <div class="countdown-overlay" id="countdownOverlay">
-          <div class="countdown-number" id="countdownNum">3</div>
-        </div>
-        <div class="flash-overlay" id="flashOverlay"></div>
-      </div>
-
-      <canvas id="captureCanvas" style="display:none"></canvas>
-
-      <div class="photo-actions" id="btnGroupCamera">
-        <button class="btn-action btn-secondary" onclick="openCamera()">📷 เปิดกล้อง</button>
-        <button class="btn-action btn-secondary" onclick="document.getElementById('fileInput').click()">📁 อัปโหลด</button>
-      </div>
-      <div class="photo-actions" id="btnGroupCapture" style="display:none">
-        <button class="btn-action btn-danger" onclick="resetPhoto()">↩ ถ่ายใหม่</button>
-        <button class="btn-action btn-primary" onclick="gotoScreen('theme')">เลือกธีม →</button>
-      </div>
-      <div class="photo-actions" id="btnGroupLive" style="display:none">
-        <button class="btn-action btn-danger" onclick="closeCamera()">✕ ยกเลิก</button>
-        <button class="btn-action btn-primary" id="snapBtn" onclick="startCountdown()">📸 ถ่ายรูป</button>
-      </div>
-
-      <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleUpload(this)">
+  <section class="themes-section">
+    <div class="section-eyebrow">12 Themes Available</div>
+    <h2 class="section-title">เลือกธีม<em>ในฝัน</em>ของคุณ</h2>
+    <div class="themes-marquee-wrap">
+      <div class="themes-marquee" id="themesMarquee"></div>
     </div>
-  </div>
+  </section>
 
-  <!-- SCREEN 3: THEME -->
-  <div class="screen" id="screen-theme">
-    <div class="booth-header">
-      <button class="btn-action btn-secondary" style="padding:8px 14px;font-size:13px;border-radius:10px;flex:none;width:auto;" onclick="event.stopPropagation();gotoScreen('photo')">← กลับ</button>
-      <div class="step-dots">
-        <div class="step-dot done"></div>
-        <div class="step-dot active"></div>
-        <div class="step-dot"></div>
-      </div>
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-num">12</div><div class="stat-label">ธีมให้เลือก</div></div>
+      <div class="stat-item"><div class="stat-num">15s</div><div class="stat-label">เวลาสร้างภาพ</div></div>
+      <div class="stat-item"><div class="stat-num">4K</div><div class="stat-label">คุณภาพภาพ</div></div>
+      <div class="stat-item"><div class="stat-num">∞</div><div class="stat-label">ความสนุก</div></div>
     </div>
-    <div class="theme-body">
-      <div style="max-width:420px;margin:0 auto;">
-        <div class="section-label">02 — เลือกธีม</div>
-        <div class="theme-preview" id="themePreviewFrame">
-          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;flex-direction:column;gap:8px;">
-            <span style="font-size:32px;opacity:0.4">🎭</span>
-            <span>เลือกธีมด้านล่าง</span>
-          </div>
-        </div>
-        <div class="theme-grid-label">เลือก 1 ธีม</div>
-        <div class="themes-scroll" id="themeGrid"></div>
-      </div>
-    </div>
-    <div class="bottom-bar">
-      <button class="btn-full" id="btnGenerate" disabled onclick="startGenerate()">เลือกธีมก่อน</button>
+  </section>
+
+  <section class="cta-section">
+    <div class="section-eyebrow">Ready?</div>
+    <h2 class="section-title">เริ่ม<em>สร้าง</em>ตัวตนใหม่</h2>
+    <p class="cta-subtitle">ฟรี · ไม่ต้องสมัครสมาชิก · รับภาพทันที</p>
+    <button class="btn-cta-large" onclick="gotoScreen('photo')">เริ่มใช้งานเลย</button>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-logo">AI PHOTO BOOTH</div>
+    <div class="footer-copy">© 2026 · Thailand · Powered by Leonardo.ai</div>
+  </footer>
+</div>
+
+<!-- SCREEN 2: PHOTO -->
+<div class="screen" id="screen-photo">
+  <div class="booth-header">
+    <div class="logo" onclick="gotoScreen('welcome')">AI <span>Photo</span> Booth</div>
+    <div class="step-dots">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
     </div>
   </div>
+  <div class="photo-body">
+    <div class="section-label">01 — ถ่ายรูปของคุณ</div>
+    <div id="httpsNotice" class="https-notice">⚠️ กล้องต้องใช้ HTTPS — กรุณาเปิดด้วย <strong>https://</strong> หรือ localhost</div>
+    <div class="camera-frame" id="cameraFrame">
+      <div class="camera-placeholder" id="cameraPlaceholder">
+        <div class="icon">🤳</div>
+        <p>กดถ่ายรูปหรืออัปโหลด</p>
+      </div>
+      <video id="videoEl" style="display:none" autoplay playsinline muted></video>
+      <img id="photoPreview" style="display:none" alt="">
+      <div class="countdown-overlay" id="countdownOverlay">
+        <div class="countdown-number" id="countdownNum">3</div>
+      </div>
+      <div class="flash-overlay" id="flashOverlay"></div>
+    </div>
+    <canvas id="captureCanvas" style="display:none"></canvas>
+    <div class="photo-actions" id="btnGroupCamera">
+      <button class="btn-action btn-secondary" onclick="openCamera()">📷 เปิดกล้อง</button>
+      <button class="btn-action btn-secondary" onclick="document.getElementById('fileInput').click()">📁 อัปโหลด</button>
+    </div>
+    <div class="photo-actions" id="btnGroupCapture" style="display:none">
+      <button class="btn-action btn-danger" onclick="resetPhoto()">↩ ถ่ายใหม่</button>
+      <button class="btn-action btn-primary" onclick="validateAndGoToTheme()">เลือกธีม →</button>
+    </div>
+    <div class="photo-actions" id="btnGroupLive" style="display:none">
+      <button class="btn-action btn-danger" onclick="closeCamera()">✕ ยกเลิก</button>
+      <button class="btn-action btn-primary" id="snapBtn" onclick="startCountdown()">📸 ถ่ายรูป</button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleUpload(this)">
+  </div>
+</div>
 
-  <!-- SCREEN 4: GENERATING -->
-  <div class="screen" id="screen-generating">
+<!-- SCREEN 3: THEME -->
+<div class="screen" id="screen-theme">
+  <div class="booth-header">
+    <button class="btn-back" onclick="gotoScreen('photo')">กลับ</button>
+    <div class="logo" onclick="gotoScreen('welcome')" style="position:absolute;left:50%;transform:translateX(-50%)">AI <span>Photo</span> Booth</div>
+    <div class="step-dots">
+      <div class="step-dot done"></div>
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+    </div>
+  </div>
+  <div class="theme-body">
+    <div style="max-width:440px;margin:0 auto;">
+      <div class="section-label">02 — เลือกธีม</div>
+      <div class="preview-split" id="previewSplit">
+        <div class="preview-split-card" id="userPhotoCard">
+          <div class="psc-placeholder" id="userPhotoPlaceholder">🤳</div>
+          <img id="userPhotoThumb" src="" alt="" style="display:none">
+          <div class="psc-label">รูปของคุณ</div>
+        </div>
+        <div class="preview-split-card" id="themeSampleCard">
+          <div class="psc-placeholder" id="themeSamplePlaceholder">🎭</div>
+          <img id="themeSampleImg" src="" alt="" style="display:none">
+          <div class="psc-label" id="themeSampleLabel">เลือกธีม</div>
+        </div>
+      </div>
+      <div class="theme-grid-label">เลือก 1 ธีม</div>
+      <div class="themes-grid" id="themeGrid"></div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn-full" id="btnGenerate" disabled onclick="startGenerate()">เลือกธีมก่อน</button>
+  </div>
+</div>
+
+<!-- SCREEN 4: GENERATING -->
+<div class="screen" id="screen-generating">
+  <div id="genLoadingState" style="display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;padding:40px 24px;">
     <div class="gen-ring">
-      <svg width="120" height="120" viewBox="0 0 120 120">
+      <svg viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(212,175,55,0.1)" stroke-width="3"/>
-        <circle cx="60" cy="60" r="52" fill="none" stroke="url(#goldGrad)" stroke-width="3"
-          stroke-dasharray="80 246" stroke-linecap="round"/>
-        <defs>
-          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#D4AF37"/>
-            <stop offset="100%" stop-color="#F0D060"/>
-          </linearGradient>
-        </defs>
+        <circle cx="60" cy="60" r="52" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-dasharray="80 246" stroke-linecap="round"/>
+        <defs><linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#F0D060"/></linearGradient></defs>
       </svg>
-      <div class="gen-ring-inner" id="genEmoji">✨</div>
+      <div class="gen-ring-inner" id="genEmoji"></div>
     </div>
     <div class="gen-title">กำลังสร้างภาพ...</div>
-    <div class="gen-subtitle" id="genSubtitle">AI กำลังแต่งธีมให้กับภาพของคุณ</div>
+    <div class="gen-subtitle" id="genSubtitle">AI กำลังสร้าง 4 ภาพให้คุณเลือก</div>
     <div class="gen-progress"><div class="gen-progress-bar" id="genProgressBar"></div></div>
     <div class="gen-steps">
       <div class="gen-step" id="gs1"><span class="step-icon">🔍</span> วิเคราะห์ใบหน้า</div>
-      <div class="gen-step" id="gs2"><span class="step-icon">🎨</span> สร้างธีมด้วย AI</div>
-      <div class="gen-step" id="gs3"><span class="step-icon">✨</span> ปรับแต่งรายละเอียด</div>
-      <div class="gen-step" id="gs4"><span class="step-icon">📦</span> เตรียมภาพสำหรับดาวน์โหลด</div>
+      <div class="gen-step" id="gs2"><span class="step-icon">🎨</span> สร้างธีมด้วย AI (4 ภาพ)</div>
+      <div class="gen-step" id="gs3"><span class="step-icon"></span> ปรับแต่งรายละเอียด</div>
+      <div class="gen-step" id="gs4"><span class="step-icon"></span> เตรียมภาพให้เลือก</div>
     </div>
   </div>
+  <div class="gen-results-overlay" id="genSelectState" style="padding-bottom:40px;">
+    <div class="gen-results-title">เลือกภาพที่ชอบที่สุด</div>
+    <div class="gen-results-subtitle">แตะภาพเพื่อเลือก</div>
+    <div class="gen-4grid" id="gen4Grid"></div>
+    <button class="btn-select-result" id="btnSelectResult" disabled onclick="confirmSelectedImage()">เลือกภาพนี้</button>
+    <button class="btn-back" onclick="gotoScreen('theme')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);margin-top:12px;">← ลองธีมอื่น</button>
+  </div>
+</div>
 
-  <!-- SCREEN 5: RESULT -->
-  <div class="screen" id="screen-result">
-    <div class="booth-header">
-      <div class="logo">AI <span>Photo</span> Booth</div>
-      <div class="step-dots">
-        <div class="step-dot done"></div>
-        <div class="step-dot done"></div>
-        <div class="step-dot active"></div>
-      </div>
-    </div>
-    <div class="result-body">
-      <div class="section-label">03 — ผลลัพธ์ของคุณ</div>
-
-      <div class="result-frame">
-        <img id="resultImg" src="" alt="AI Result">
-        <div class="result-badge" id="resultBadge">AI Generated</div>
-      </div>
-
-      <div class="result-compare">
-        <div class="compare-card">
-          <img id="compareOriginal" src="" alt="Original">
-          <div class="compare-label">ต้นฉบับ</div>
-        </div>
-        <div class="compare-card">
-          <img id="compareResult" src="" alt="Result">
-          <div class="compare-label" id="compareThemeName">AI Theme</div>
-        </div>
-      </div>
-
-      <div class="qr-section">
-        <div class="qr-title">📲 สแกน QR Code เพื่อรับภาพ</div>
-        <div class="qr-code" id="qrCodeContainer">
-          <canvas id="qrCanvas" width="120" height="120"></canvas>
-        </div>
-        <div class="qr-hint">หรือกดปุ่มดาวน์โหลดด้านล่าง</div>
-      </div>
-
-      <div class="share-row">
-        <button class="btn-share download" onclick="downloadResult()">
-          <span class="s-icon">💾</span> ดาวน์โหลด
-        </button>
-        <button class="btn-share share" onclick="shareResult()">
-          <span class="s-icon">📤</span> แชร์
-        </button>
-        <button class="btn-share again" onclick="startAgain()">
-          <span class="s-icon">🔄</span> ถ่ายใหม่
-        </button>
-      </div>
+<!-- SCREEN 5: RESULT -->
+<div class="screen" id="screen-result">
+  <div class="booth-header">
+    <button class="btn-back" onclick="gotoScreen('theme')">← เลือกธีมอื่น</button>
+    <div class="logo" onclick="gotoScreen('welcome')" style="position:absolute;left:50%;transform:translateX(-50%)">AI <span>Photo</span> Booth</div>
+    <div class="step-dots">
+      <div class="step-dot done"></div>
+      <div class="step-dot done"></div>
+      <div class="step-dot active"></div>
     </div>
   </div>
+  <div class="result-body">
+    <div class="section-label">03 — ผลลัพธ์ของคุณ</div>
+    <div class="result-frame">
+      <img id="resultImg" src="" alt="AI Result">
+      <div class="result-badge" id="resultBadge">✦ AI Generated</div>
+    </div>
+    <div class="result-compare">
+      <div class="compare-card"><img id="compareOriginal" src="" alt="Original"><div class="compare-label">ต้นฉบับ</div></div>
+      <div class="compare-card"><img id="compareResult" src="" alt="Result"><div class="compare-label" id="compareThemeName">AI Theme</div></div>
+    </div>
+    <div class="qr-section">
+      <div class="qr-title">📲 สแกน QR Code เพื่อรับภาพ</div>
+      <div class="qr-code" id="qrCodeContainer"><div id="qrCode"></div></div>
+      <div class="qr-hint">หรือกดปุ่มดาวน์โหลดด้านล่าง</div>
+    </div>
+    <div class="share-row">
+      <button class="btn-share download" onclick="downloadResult()"><span class="s-icon">💾</span>ดาวน์โหลด</button>
+      <button class="btn-share share" onclick="shareResult()"><span class="s-icon">📤</span>แชร์</button>
+      <button class="btn-share again" onclick="startAgain()"><span class="s-icon">🔄</span>ถ่ายใหม่</button>
+    </div>
+    <button class="btn-home-result" onclick="gotoScreen('welcome')">กลับหน้าหลัก</button>
+  </div>
+</div>
 
 </div>
 
 <script>
-/* ═══ THEMES — prompt บอก AI ชัดเจน: เปลี่ยนแค่ชุด + พื้นหลัง ห้ามเปลี่ยนหน้า ═══ */
-const THEMES = [
-  {
-    id:'space', name:'นักบินอวกาศ', en:'Astronaut', bg:'t-bg-space', icon:'🚀', color:'#4488FF',
-    prompt:
-      'Change ONLY the costume to a NASA astronaut suit with white spacesuit and helmet visor. ' +
-      'Change ONLY the background to a space station interior with Earth visible through windows and stars outside. ' +
-      'Keep the face completely identical to reference. ' +
-      'Cinematic lighting, 8k photo realistic, ultra detailed spacesuit.'
-  },
-  {
-    id:'hero', name:'ซูเปอร์ฮีโร่', en:'Hero', bg:'t-bg-hero', icon:'⚡', color:'#8844FF',
-    prompt:
-      'Change ONLY the costume to a superhero outfit with dynamic cape and chest emblem. ' +
-      'Change ONLY the background to a dramatic city skyline at night with lightning. ' +
-      'Keep the face completely identical to reference. ' +
-      'Heroic pose, cinematic lighting, comic book style, ultra detailed.'
-  },
-  {
-    id:'princess', name:'เจ้าหญิง', en:'Princess', bg:'t-bg-princess', icon:'👑', color:'#FF44AA',
-    prompt:
-      'Change ONLY the costume to an elegant princess gown with tiara and jewels. ' +
-      'Change ONLY the background to a magical fairy-tale castle hall with chandeliers and golden light. ' +
-      'Keep the face completely identical to reference. ' +
-      'Fantasy painting style, golden hour lighting, ultra detailed gown.'
-  },
-  {
-    id:'samurai', name:'ซามูไร', en:'Samurai', bg:'t-bg-samurai', icon:'⚔️', color:'#FF4444',
-    prompt:
-      'Change ONLY the costume to traditional Japanese samurai armor with kabuto helmet and katana. ' +
-      'Change ONLY the background to a Japanese temple courtyard with cherry blossoms falling. ' +
-      'Keep the face completely identical to reference. ' +
-      'Cinematic epic photography, dramatic lighting, ultra detailed armor.'
-  },
-  {
-    id:'alien', name:'เอเลี่ยน', en:'Alien', bg:'t-bg-alien', icon:'🛸', color:'#44FF88',
-    prompt:
-      'Change ONLY the costume to an alien being outfit with bioluminescent patterns and sci-fi suit. ' +
-      'Change ONLY the background to a sci-fi spacecraft interior with glowing panels and stars. ' +
-      'Keep the face completely identical to reference but add subtle alien skin texture overlay only. ' +
-      'Otherworldly atmosphere, ultra detailed, sci-fi film style.'
-  },
-  {
-    id:'pirate', name:'โจรสลัด', en:'Pirate', bg:'t-bg-pirate', icon:'🏴‍☠️', color:'#FF8844',
-    prompt:
-      'Change ONLY the costume to a pirate captain outfit with tricorn hat, vintage coat, and sash. ' +
-      'Change ONLY the background to an ocean ship deck at golden sunset with sails and sea. ' +
-      'Keep the face completely identical to reference. ' +
-      'Adventure film style, dramatic lighting, ultra detailed costume.'
-  },
-  {
-    id:'cyber', name:'ไซเบอร์พังค์', en:'Cyberpunk', bg:'t-bg-cyber', icon:'🤖', color:'#44FFFF',
-    prompt:
-      'Change ONLY the costume to a cyberpunk outfit with neon-lit jacket, tech augmentation accessories, and futuristic gear. ' +
-      'Change ONLY the background to a rainy neon-lit cyberpunk city street at night with holographic signs. ' +
-      'Keep the face completely identical to reference. ' +
-      'Blade runner aesthetic, cinematic, ultra detailed.'
-  },
-  {
-    id:'wizard', name:'พ่อมด', en:'Wizard', bg:'t-bg-wizard', icon:'🔮', color:'#AA44FF',
-    prompt:
-      'Change ONLY the costume to a wizard robe with ornate patterns, pointed hat, and magical staff. ' +
-      'Change ONLY the background to a mystical forest clearing with glowing magical particles and floating orbs. ' +
-      'Keep the face completely identical to reference. ' +
-      'Fantasy art style, magical atmospheric lighting, ultra detailed robe.'
-  },
-  {
-    id:'king', name:'ราชา', en:'King', bg:'t-bg-king', icon:'👑', color:'#FFCC00',
-    prompt:
-      'Change ONLY the costume to royal king attire with golden crown, jeweled robe, and royal scepter. ' +
-      'Change ONLY the background to a grand golden throne room with marble columns and royal banners. ' +
-      'Keep the face completely identical to reference. ' +
-      'Renaissance painting style, regal lighting, ultra detailed crown and robes.'
-  },
-  {
-    id:'ninja', name:'นินจา', en:'Ninja', bg:'t-bg-ninja', icon:'🥷', color:'#888888',
-    prompt:
-      'Change ONLY the costume to a full black ninja outfit with mask covering the lower face, ninja tools. ' +
-      'Change ONLY the background to a Japanese rooftop at night with moonlight and city lights below. ' +
-      'Keep the face eyes and upper face completely identical to reference. ' +
-      'Stealthy cinematic atmosphere, dark dramatic lighting, ultra detailed.'
-  },
-  {
-    id:'retro', name:'ยุค 80', en:'Retro 80s', bg:'t-bg-retro', icon:'🕺', color:'#FF44FF',
-    prompt:
-      'Change ONLY the costume to a colorful retro 80s outfit with bold patterns, leg warmers, and vintage accessories. ' +
-      'Change ONLY the background to a disco dance floor with neon lights, mirror ball, and synthwave grid. ' +
-      'Keep the face completely identical to reference. ' +
-      'Synthwave aesthetic, vibrant retro colors, film grain effect.'
-  },
-  {
-    id:'snow', name:'สโนว์บอร์ด', en:'Snowboard', bg:'t-bg-snow', icon:'🏂', color:'#88CCFF',
-    prompt:
-      'Change ONLY the costume to professional snowboarder gear with helmet, goggles on forehead, winter jacket, and gloves. ' +
-      'Change ONLY the background to a snowy mountain peak with clear blue sky and ski slopes. ' +
-      'Keep the face completely identical to reference. ' +
-      'Professional sports photography, sharp focus, ultra detailed winter gear.'
-  }
+/* ══════════════════════════════════════════ MARQUEE DATA (แยกเฉพาะ) ══════════════════════════════════════════ */
+// const MARQUEE_THEMES = [
+//   { name:'นักบินอวกาศ', en:'Astronaut', bg:'t-bg-space', icon:'🚀' },
+//   { name:'ซูเปอร์ฮีโร่', en:'Hero', bg:'t-bg-hero', icon:'⚡' },
+//   { name:'เจ้าหญิง', en:'Princess', bg:'t-bg-princess', icon:'👸' },
+//   { name:'ซามูไร', en:'Samurai', bg:'t-bg-samurai', icon:'⚔️' },
+//   { name:'เอเลี่ยน', en:'Alien', bg:'t-bg-alien', icon:'🛸' },
+//   { name:'โจรสลัด', en:'Pirate', bg:'t-bg-pirate', icon:'🏴‍☠️' },
+//   { name:'ไซเบอร์พังค์', en:'Cyberpunk', bg:'t-bg-cyber', icon:'🤖' },
+//   { name:'พ่อมด', en:'Wizard', bg:'t-bg-wizard', icon:'🔮' },
+//   { name:'ราชา', en:'King', bg:'t-bg-king', icon:'👑' },
+//   { name:'นินจา', en:'Ninja', bg:'t-bg-ninja', icon:'🥷' },
+//   { name:'ยุค 80', en:'Retro', bg:'t-bg-retro', icon:'🕺' },
+//   { name:'สโนว์บอร์ด', en:'Snowboard', bg:'t-bg-snow', icon:'🏂' }
+// ];
+
+
+
+    /* ══════════════════════════════════════════ MARQUEE DATA (แยกเฉพาะ) ══════════════════════════════════════════ */
+// const MARQUEE_THEMES = [
+//   { name:'นักบินอวกาศ', en:'Astronaut', bg:'t-bg-space', icon:'🚀', image:'img/themes/astronaut.png' },
+//   { name:'ซูเปอร์ฮีโร่', en:'Hero', bg:'t-bg-hero', icon:'⚡', image:'img/themes/hero.png' },
+//   { name:'เจ้าหญิง', en:'Princess', bg:'t-bg-princess', icon:'👸', image:'img/themes/princess.png' },
+//   { name:'ซามูไร', en:'Samurai', bg:'t-bg-samurai', icon:'⚔️', image:'img/themes/samurai.png' },
+//   { name:'เอเลี่ยน', en:'Alien', bg:'t-bg-alien', icon:'🛸', image:'img/themes/alien.png' },
+//   { name:'โจรสลัด', en:'Pirate', bg:'t-bg-pirate', icon:'🏴‍☠️', image:'img/themes/pirate.png' },
+//   { name:'ไซเบอร์พังค์', en:'Cyberpunk', bg:'t-bg-cyber', icon:'🤖', image:'img/themes/cyberpunk.png' },
+//   { name:'พ่อมด', en:'Wizard', bg:'t-bg-wizard', icon:'🔮', image:'img/themes/wizard.png' },
+//   { name:'ราชา', en:'King', bg:'t-bg-king', icon:'👑', image:'img/themes/king.png' },
+//   { name:'นินจา', en:'Ninja', bg:'t-bg-ninja', icon:'🥷', image:'img/themes/ninja.png' },
+//   { name:'ยุค 80', en:'Retro', bg:'t-bg-retro', icon:'🕺', image:'img/themes/retro.png' },
+//   { name:'สโนว์บอร์ด', en:'Snowboard', bg:'t-bg-snow', icon:'🏂', image:'img/themes/snowboard.png' }
+// ];
+
+
+// const MARQUEE_THEMES = [
+//   { name:'นักบินอวกาศ', en:'Astronaut', bg:'t-bg-space', icon:'🚀', image:'/frontend/img/themes/astronaut.png' },
+//   { name:'ซูเปอร์ฮีโร่', en:'Hero', bg:'t-bg-hero', icon:'⚡', image:'/frontend/img/themes/hero.png' },
+//   { name:'เจ้าหญิง', en:'Princess', bg:'t-bg-princess', icon:'👸', image:'/frontend/img/themes/princess.png' },
+//   { name:'ซามูไร', en:'Samurai', bg:'t-bg-samurai', icon:'⚔️', image:'/frontend/img/themes/samurai.png' },
+//   { name:'เอเลี่ยน', en:'Alien', bg:'t-bg-alien', icon:'🛸', image:'/frontend/img/themes/alien.png' },
+//   { name:'โจรสลัด', en:'Pirate', bg:'t-bg-pirate', icon:'🏴‍☠️', image:'/frontend/img/themes/pirate.png' },
+//   { name:'ไซเบอร์พังค์', en:'Cyberpunk', bg:'t-bg-cyber', icon:'🤖', image:'/frontend/img/themes/cyberpunk.png' },
+//   { name:'พ่อมด', en:'Wizard', bg:'t-bg-wizard', icon:'🔮', image:'/frontend/img/themes/wizard.png' },
+//   { name:'ราชา', en:'King', bg:'t-bg-king', icon:'👑', image:'/frontend/img/themes/king.png' },
+//   { name:'นินจา', en:'Ninja', bg:'t-bg-ninja', icon:'🥷', image:'/frontend/img/themes/ninja.png' },
+//   { name:'ยุค 80', en:'Retro', bg:'t-bg-retro', icon:'🕺', image:'/frontend/img/themes/retro.png' },
+//   { name:'สโนว์บอร์ด', en:'Snowboard', bg:'t-bg-snow', icon:'🏂', image:'/frontend/img/themes/snowboard.png' }
+// ];
+
+// const BASE = '/frontend/img/themes/';
+
+// const MARQUEE_THEMES = [
+//   { id:'astronaut', name:{ th:'นักบินอวกาศ', en:'Astronaut' }, bg:'t-bg-space', icon:'🚀', image:`${BASE}astronaut.png` },
+//   { id:'hero', name:{ th:'ซูเปอร์ฮีโร่', en:'Hero' }, bg:'t-bg-hero', icon:'⚡', image:`${BASE}hero.png` },
+//   { id:'princess', name:{ th:'เจ้าหญิง', en:'Princess' }, bg:'t-bg-princess', icon:'👸', image:`${BASE}princess.png` },
+//   { id:'samurai', name:{ th:'ซามูไร', en:'Samurai' }, bg:'t-bg-samurai', icon:'⚔️', image:`${BASE}samurai.png` },
+//   { id:'alien', name:{ th:'เอเลี่ยน', en:'Alien' }, bg:'t-bg-alien', icon:'🛸', image:`${BASE}alien.png` },
+//   { id:'pirate', name:{ th:'โจรสลัด', en:'Pirate' }, bg:'t-bg-pirate', icon:'🏴‍☠️', image:`${BASE}pirate.png` },
+//   { id:'cyberpunk', name:{ th:'ไซเบอร์พังค์', en:'Cyberpunk' }, bg:'t-bg-cyber', icon:'🤖', image:`${BASE}cyberpunk.png` },
+//   { id:'wizard', name:{ th:'พ่อมด', en:'Wizard' }, bg:'t-bg-wizard', icon:'🔮', image:`${BASE}wizard.png` },
+//   { id:'king', name:{ th:'ราชา', en:'King' }, bg:'t-bg-king', icon:'👑', image:`${BASE}king.png` },
+//   { id:'ninja', name:{ th:'นินจา', en:'Ninja' }, bg:'t-bg-ninja', icon:'🥷', image:`${BASE}ninja.png` },
+//   { id:'retro', name:{ th:'ยุค 80', en:'Retro' }, bg:'t-bg-retro', icon:'🕺', image:`${BASE}retro.png` },
+//   { id:'snowboard', name:{ th:'สโนว์บอร์ด', en:'Snowboard' }, bg:'t-bg-snow', icon:'🏂', image:`${BASE}snowboard.png` }
+// ];
+const BASE = '/themes/';
+
+const MARQUEE_THEMES = [
+  { id:'astronaut', name:{ th:'นักบินอวกาศ', en:'Astronaut' }, bg:'t-bg-space', image:`${BASE}astronaut.png` },
+  { id:'hero', name:{ th:'ซูเปอร์ฮีโร่', en:'Hero' }, bg:'t-bg-hero', image:`${BASE}hero.png` },
+  { id:'princess', name:{ th:'เจ้าหญิง', en:'Princess' }, bg:'t-bg-princess', image:`${BASE}queen.png` },
+  { id:'samurai', name:{ th:'ซามูไร', en:'Samurai' }, bg:'t-bg-samurai', image:`${BASE}samurai.png` },
+  { id:'alien', name:{ th:'เอเลี่ยน', en:'Alien' }, bg:'t-bg-alien', image:`${BASE}alien.png` },
+  { id:'pirate', name:{ th:'โจรสลัด', en:'Pirate' }, bg:'t-bg-pirate', image:`${BASE}pirate.jpeg` },
+  { id:'cyberpunk', name:{ th:'ไซเบอร์พังค์', en:'Cyberpunk' }, bg:'t-bg-cyber', image:`${BASE}cyberpunk.png` },
+  { id:'wizard', name:{ th:'พ่อมด', en:'Wizard' }, bg:'t-bg-wizard', image:`${BASE}wizard.png` },
+  { id:'king', name:{ th:'ราชา', en:'King' }, bg:'t-bg-king', image:`${BASE}king.png` },
+  { id:'ninja', name:{ th:'นินจา', en:'Ninja' }, bg:'t-bg-ninja', image:`${BASE}ninja.png` },
+  { id:'retro', name:{ th:'ยุค 80', en:'Retro' }, bg:'t-bg-retro', image:`${BASE}retro.png` },
+  { id:'snowboard', name:{ th:'สโนว์บอร์ด', en:'Snowboard' }, bg:'t-bg-snow', image:`${BASE}snowboard.png` }
 ];
 
-/* ═══ STATE ═══ */
+/* ══ MARQUEE BUILDER (ใช้รูปภาพแทน Emoji) ══ */
+function buildMarquee() {
+  const container = document.getElementById('themesMarquee');
+  if (!container) return;
+  const doubled = [...MARQUEE_THEMES, ...MARQUEE_THEMES];
+  container.innerHTML = doubled.map(t => `
+    <div class="marquee-card ${t.bg}">
+      <div class="mc-bg">
+        <img src="${t.image}" alt="${t.name}" style="width:80px; height:80px; object-fit:contain; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+      </div>
+      <div class="mc-label">${t.name}<span class="mc-en">${t.en}</span></div>
+    </div>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════ THEMES DATA (สำหรับ Theme Grid และสร้างภาพ) ══════════════════════════════════════════ */
+const THEMES = [
+  { id:'space', name:'นักบินอวกาศ', en:'Astronaut', bg:'t-bg-space', icon:'🚀', color:'#4488FF', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%234488FF"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🚀%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to a NASA astronaut suit with white spacesuit and helmet visor. Change ONLY the background to a space station interior with Earth visible through windows and stars outside. Keep the face completely identical to reference. Cinematic lighting, 8k photo realistic, ultra detailed spacesuit.' },
+  { id:'hero', name:'ซูเปอร์ฮีโร่', en:'Hero', bg:'t-bg-hero', icon:'⚡', color:'#8844FF', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%238844FF"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E⚡%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to a superhero outfit with dynamic cape and chest emblem. Change ONLY the background to a dramatic city skyline at night with lightning. Keep the face completely identical to reference. Heroic pose, cinematic lighting, comic book style, ultra detailed.' },
+  { id:'princess', name:'เจ้าหญิง', en:'Princess', bg:'t-bg-princess', icon:'👸', color:'#FF44AA', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23FF44AA"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E👸%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to an elegant princess gown with tiara and jewels. Change ONLY the background to a magical fairy-tale castle hall with chandeliers and golden light. Keep the face completely identical to reference. Fantasy painting style, golden hour lighting, ultra detailed gown.' },
+  { id:'samurai', name:'ซามูไร', en:'Samurai', bg:'t-bg-samurai', icon:'⚔️', color:'#FF4444', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23FF4444"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E⚔️%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to traditional Japanese samurai armor with kabuto helmet and katana. Change ONLY the background to a Japanese temple courtyard with cherry blossoms falling. Keep the face completely identical to reference. Cinematic epic photography, dramatic lighting, ultra detailed armor.' },
+  { id:'alien', name:'เอเลี่ยน', en:'Alien', bg:'t-bg-alien', icon:'🛸', color:'#44FF88', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%2344FF88"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🛸%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to an alien being outfit with bioluminescent patterns and sci-fi suit. Change ONLY the background to a sci-fi spacecraft interior with glowing panels and stars. Keep the face completely identical to reference but add subtle alien skin texture overlay only. Otherworldly atmosphere, ultra detailed, sci-fi film style.' },
+  { id:'pirate', name:'โจรสลัด', en:'Pirate', bg:'t-bg-pirate', icon:'🏴‍☠️', color:'#FF8844', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23FF8844"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🏴‍☠️%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to a pirate captain outfit with tricorn hat, vintage coat, and sash. Change ONLY the background to an ocean ship deck at golden sunset with sails and sea. Keep the face completely identical to reference. Adventure film style, dramatic lighting, ultra detailed costume.' },
+  { id:'cyber', name:'ไซเบอร์พังค์', en:'Cyberpunk', bg:'t-bg-cyber', icon:'🤖', color:'#44FFFF', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%2344FFFF"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🤖%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to a cyberpunk outfit with neon-lit jacket, tech augmentation accessories, and futuristic gear. Change ONLY the background to a rainy neon-lit cyberpunk city street at night with holographic signs. Keep the face completely identical to reference. Blade runner aesthetic, cinematic, ultra detailed.' },
+  { id:'wizard', name:'พ่อมด', en:'Wizard', bg:'t-bg-wizard', icon:'🔮', color:'#AA44FF', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23AA44FF"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🔮%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to a wizard robe with ornate patterns, pointed hat, and magical staff. Change ONLY the background to a mystical forest clearing with glowing magical particles and floating orbs. Keep the face completely identical to reference. Fantasy art style, magical atmospheric lighting, ultra detailed robe.' },
+  { id:'king', name:'ราชา', en:'King', bg:'t-bg-king', icon:'👑', color:'#FFCC00', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23FFCC00"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E👑%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to royal king attire with golden crown, jeweled robe, and royal scepter. Change ONLY the background to a grand golden throne room with marble columns and royal banners. Keep the face completely identical to reference. Renaissance painting style, regal lighting, ultra detailed crown and robes.' },
+  { id:'ninja', name:'นินจา', en:'Ninja', bg:'t-bg-ninja', icon:'🥷', color:'#AAAAAA', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23AAAAAA"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🥷%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to a full black ninja outfit with mask covering the lower face, ninja tools. Change ONLY the background to a Japanese rooftop at night with moonlight and city lights below. Keep the face eyes and upper face completely identical to reference. Stealthy cinematic atmosphere, dark dramatic lighting, ultra detailed.' },
+  { id:'retro', name:'ยุค 80', en:'Retro 80s', bg:'t-bg-retro', icon:'🕺', color:'#FF44FF', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23FF44FF"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🕺%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to a colorful retro 80s outfit with bold patterns, leg warmers, and vintage accessories. Change ONLY the background to a disco dance floor with neon lights, mirror ball, and synthwave grid. Keep the face completely identical to reference. Synthwave aesthetic, vibrant retro colors, film grain effect.' },
+  { id:'snow', name:'สโนว์บอร์ด', en:'Snowboard', bg:'t-bg-snow', icon:'🏂', color:'#88CCFF', sampleImg:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%2388CCFF"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🏂%3C/text%3E%3C/svg%3E',
+    prompt:'Change ONLY the costume to professional snowboarder gear with helmet, goggles on forehead, winter jacket, and gloves. Change ONLY the background to a snowy mountain peak with clear blue sky and ski slopes. Keep the face completely identical to reference. Professional sports photography, sharp focus, ultra detailed winter gear.' }
+];
+
+/* ══ STATE ══ */
 let currentScreen = 'welcome';
 let photoDataUrl = null;
 let photoBase64 = null;
 let selectedTheme = null;
 let resultUrl = null;
 let cameraStream = null;
+let generatedImages = [];
+let selectedImageIndex = -1;
 
-/* ═══ NAVIGATION ═══ */
+/* ══ INIT ══ */
+buildThemeGrid();
+buildMarquee();
+checkSecureContext();
+window.addEventListener('load', () => { document.getElementById('screen-welcome').scrollTop = 0; });
+
+/* ══ NAVIGATION ══ */
 function gotoScreen(name) {
+  if (currentScreen === 'photo' && name !== 'photo' && cameraStream) closeCamera();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   currentScreen = name;
-  if (name === 'photo') checkSecureContext();
+  if (name === 'photo') {
+    checkSecureContext();
+    if (!photoDataUrl) {
+      document.getElementById('btnGroupCapture').style.display = 'none';
+      document.getElementById('btnGroupCamera').style.display = 'flex';
+      document.getElementById('cameraPlaceholder').style.display = 'flex';
+      document.getElementById('photoPreview').style.display = 'none';
+    }
+  }
+  if (name === 'theme' && photoDataUrl) updateUserPhotoThumb();
+  if (name === 'welcome') document.getElementById('screen-welcome').scrollTop = 0;
 }
 
-/* ═══ SECURE CONTEXT ═══ */
+function validateAndGoToTheme() {
+  if (!photoDataUrl) { showToast('กรุณาถ่ายรูปหรืออัปโหลดรูปก่อน', 'error'); return; }
+  gotoScreen('theme');
+}
+
 function checkSecureContext() {
   const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   document.getElementById('httpsNotice').style.display = secure ? 'none' : 'block';
 }
 
-function getMedia(constraints) {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    return Promise.reject(new Error('ต้องใช้ HTTPS เพื่อเปิดกล้อง'));
-  }
-  return navigator.mediaDevices.getUserMedia(constraints);
-}
-
-/* ═══ CAMERA ═══ */
+/* ══ CAMERA ══ */
 async function openCamera() {
   try {
-    const stream = await getMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } } });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user', width:{ideal:1280}, height:{ideal:960} } });
     cameraStream = stream;
     const vid = document.getElementById('videoEl');
-    vid.srcObject = stream;
-    vid.style.display = 'block';
+    vid.srcObject = stream; vid.style.display = 'block';
+    vid.onloadedmetadata = () => { if (vid.videoWidth === 0) vid.play(); };
     document.getElementById('cameraPlaceholder').style.display = 'none';
     document.getElementById('btnGroupCamera').style.display = 'none';
     document.getElementById('btnGroupLive').style.display = 'flex';
-  } catch(e) {
-    showToast('ไม่สามารถเปิดกล้อง: ' + e.message, 'error');
-  }
+  } catch(e) { showToast('ไม่สามารถเปิดกล้อง: ' + e.message, 'error'); }
 }
 
 function closeCamera() {
@@ -980,43 +1118,29 @@ function closeCamera() {
 }
 
 function startCountdown() {
-  document.getElementById('snapBtn').disabled = true;
+  const snapBtn = document.getElementById('snapBtn');
+  snapBtn.disabled = true;
   const overlay = document.getElementById('countdownOverlay');
   const num = document.getElementById('countdownNum');
   overlay.classList.add('show');
-  let count = 3;
-  num.textContent = count;
-
+  let count = 3; num.textContent = count;
   const tick = setInterval(() => {
     count--;
-    if (count > 0) {
-      num.textContent = count;
-      num.style.animation = 'none';
-      num.offsetHeight;
-      num.style.animation = 'countPulse 0.9s ease-out';
-    } else {
-      clearInterval(tick);
-      overlay.classList.remove('show');
-      capturePhoto();
-      document.getElementById('snapBtn').disabled = false;
-    }
+    if (count > 0) { num.textContent = count; num.style.animation = 'none'; num.offsetHeight; num.style.animation = 'countPulse 0.9s ease-out'; }
+    else { clearInterval(tick); overlay.classList.remove('show'); capturePhoto(); snapBtn.disabled = false; }
   }, 900);
 }
 
 function capturePhoto() {
   const vid = document.getElementById('videoEl');
+  if (!vid.videoWidth || !vid.videoHeight) { showToast('กรุณารอให้กล้องทำงานก่อนถ่ายรูป', 'error'); return; }
   const canvas = document.getElementById('captureCanvas');
-  canvas.width = vid.videoWidth || 640;
-  canvas.height = vid.videoHeight || 480;
+  canvas.width = vid.videoWidth; canvas.height = vid.videoHeight;
   canvas.getContext('2d').drawImage(vid, 0, 0);
-
   const flash = document.getElementById('flashOverlay');
-  flash.classList.add('flash');
-  setTimeout(() => flash.classList.remove('flash'), 350);
-
+  flash.classList.add('flash'); setTimeout(() => flash.classList.remove('flash'), 350);
   photoDataUrl = canvas.toDataURL('image/jpeg', 0.92);
   photoBase64 = photoDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
-
   closeCamera();
   setPreviewPhoto(photoDataUrl);
   showToast('📸 ถ่ายรูปสำเร็จ!', 'success');
@@ -1024,6 +1148,7 @@ function capturePhoto() {
 
 function handleUpload(input) {
   const file = input.files[0]; if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น', 'error'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     photoDataUrl = e.target.result;
@@ -1031,6 +1156,7 @@ function handleUpload(input) {
     setPreviewPhoto(photoDataUrl);
     showToast('📁 อัปโหลดสำเร็จ!', 'success');
   };
+  reader.onerror = () => { showToast('เกิดข้อผิดพลาดในการอัปโหลด', 'error'); };
   reader.readAsDataURL(file);
   input.value = '';
 }
@@ -1041,6 +1167,15 @@ function setPreviewPhoto(dataUrl) {
   document.getElementById('cameraPlaceholder').style.display = 'none';
   document.getElementById('btnGroupCamera').style.display = 'none';
   document.getElementById('btnGroupCapture').style.display = 'flex';
+  updateUserPhotoThumb();
+}
+
+function updateUserPhotoThumb() {
+  if (photoDataUrl) {
+    const thumb = document.getElementById('userPhotoThumb');
+    thumb.src = photoDataUrl; thumb.style.display = 'block';
+    document.getElementById('userPhotoPlaceholder').style.display = 'none';
+  }
 }
 
 function resetPhoto() {
@@ -1050,54 +1185,64 @@ function resetPhoto() {
   document.getElementById('cameraPlaceholder').style.display = 'flex';
   document.getElementById('btnGroupCapture').style.display = 'none';
   document.getElementById('btnGroupCamera').style.display = 'flex';
+  const thumb = document.getElementById('userPhotoThumb');
+  thumb.style.display = 'none';
+  document.getElementById('userPhotoPlaceholder').style.display = 'flex';
 }
 
-/* ═══ THEME GRID ═══ */
+/* ══ THEME GRID ══ */
 function buildThemeGrid() {
   const grid = document.getElementById('themeGrid');
-  grid.innerHTML = THEMES.map(t => `
-    <div class="theme-tile ${t.bg}" id="tile-${t.id}" data-id="${t.id}">
-      <div class="t-icon" style="color:${t.color}">${t.icon}</div>
-      <div class="t-name">${t.name}</div>
-      <div class="t-en">${t.en}</div>
-    </div>
-  `).join('');
-
-  grid.addEventListener('click', function(e) {
-    const tile = e.target.closest('.theme-tile');
-    if (!tile) return;
-    e.stopPropagation();
-    selectTheme(tile.dataset.id);
-  });
+  grid.innerHTML = THEMES.map(t => `<div class="theme-tile ${t.bg}" id="tile-${t.id}" data-id="${t.id}"><div class="t-icon" style="color:${t.color}">${t.icon}</div><div class="t-name">${t.name}</div><div class="t-en">${t.en}</div></div>`).join('');
+  grid.addEventListener('click', e => { const tile = e.target.closest('.theme-tile'); if (tile) selectTheme(tile.dataset.id); });
 }
 
 function selectTheme(id) {
   selectedTheme = THEMES.find(t => t.id === id);
   document.querySelectorAll('.theme-tile').forEach(t => t.classList.remove('selected'));
   document.getElementById('tile-' + id).classList.add('selected');
-
-  const pf = document.getElementById('themePreviewFrame');
-  if (photoDataUrl) {
-    pf.innerHTML = `
-      <img src="${photoDataUrl}" style="width:100%;height:100%;object-fit:cover;filter:hue-rotate(${THEMES.indexOf(selectedTheme)*20}deg) saturate(1.3)">
-      <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:12px;background:rgba(0,0,0,0.6);padding:6px;">${selectedTheme.icon} ${selectedTheme.name}</div>`;
-  }
-
+  const sampleImg = document.getElementById('themeSampleImg');
+  const samplePlaceholder = document.getElementById('themeSamplePlaceholder');
+  const sampleLabel = document.getElementById('themeSampleLabel');
+  sampleLabel.textContent = selectedTheme.icon + ' ' + selectedTheme.name;
+  sampleImg.onload = () => { sampleImg.style.display = 'block'; samplePlaceholder.style.display = 'none'; };
+  sampleImg.onerror = () => { sampleImg.style.display = 'none'; samplePlaceholder.style.display = 'flex'; samplePlaceholder.textContent = selectedTheme.icon; samplePlaceholder.style.fontSize = '40px'; };
+  sampleImg.src = selectedTheme.sampleImg;
   const btn = document.getElementById('btnGenerate');
   btn.disabled = false;
   btn.textContent = `✨ สร้างภาพธีม ${selectedTheme.name}`;
 }
 
-/* ═══ GENERATE ═══ */
+/* ══ MARQUEE BUILDER (แยกจาก THEMES) ══ */
+function buildMarquee() {
+  const container = document.getElementById('themesMarquee');
+  if (!container) return;
+  const doubled = [...MARQUEE_THEMES, ...MARQUEE_THEMES];
+  container.innerHTML = doubled.map(t => `
+    <div class="marquee-card ${t.bg}">
+      <div class="mc-bg">${t.icon}</div>
+      <div class="mc-label">${t.name}<span class="mc-en">${t.en}</span></div>
+    </div>
+  `).join('');
+}
+
+/* ══ GENERATE — ใช้ Bulk API ══ */
 async function startGenerate() {
-  if (!selectedTheme || !photoBase64) { showToast('กรุณาถ่ายรูปและเลือกธีม', 'error'); return; }
+  if (!selectedTheme || !photoBase64) { 
+    showToast('กรุณาถ่ายรูปและเลือกธีม', 'error'); 
+    return; 
+  }
 
   gotoScreen('generating');
+  document.getElementById('genLoadingState').style.display = 'flex';
+  document.getElementById('genSelectState').classList.remove('show');
   document.getElementById('genEmoji').textContent = selectedTheme.icon;
 
   const steps = ['gs1','gs2','gs3','gs4'];
   const bar = document.getElementById('genProgressBar');
   let stepIdx = 0;
+  steps.forEach(s => { document.getElementById(s).className = 'gen-step'; });
+  bar.style.width = '0%';
 
   const advanceStep = () => {
     if (stepIdx > 0) {
@@ -1110,15 +1255,14 @@ async function startGenerate() {
       stepIdx++;
     }
   };
-
   advanceStep();
   const stepTimer = setInterval(() => {
     if (stepIdx < steps.length) advanceStep();
     else clearInterval(stepTimer);
-  }, 3000);
+  }, 2500);
 
   try {
-    const res = await fetch('/api/generate-leonardo', {
+    const response = await fetch('/api/generate-4', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1130,18 +1274,21 @@ async function startGenerate() {
     });
 
     clearInterval(stepTimer);
-    steps.forEach(s => { document.getElementById(s).classList.remove('active'); document.getElementById(s).classList.add('done'); });
+    steps.forEach(s => { 
+      document.getElementById(s).classList.remove('active'); 
+      document.getElementById(s).classList.add('done'); 
+    });
     bar.style.width = '100%';
 
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error('Server ' + res.status + ': ' + txt);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'API error');
     }
 
-    const data = await res.json();
-    if (data.success && data.imageUrl) {
-      resultUrl = data.imageUrl;
-      showResult(resultUrl);
+    const data = await response.json();
+    if (data.success && data.imageUrls && data.imageUrls.length > 0) {
+      generatedImages = data.imageUrls;
+      showImageSelection(generatedImages);
     } else {
       throw new Error(data.error || 'ไม่สามารถสร้างภาพได้');
     }
@@ -1149,12 +1296,38 @@ async function startGenerate() {
   } catch(err) {
     clearInterval(stepTimer);
     console.error(err);
-    showToast('⚠️ API ยังไม่เชื่อมต่อ — แสดงตัวอย่างสาธิต', 'error');
-    setTimeout(() => showResult(photoDataUrl, true), 1200);
+    showToast('⚠️ ' + err.message, 'error');
+    setTimeout(() => {
+      generatedImages = [photoDataUrl, photoDataUrl, photoDataUrl, photoDataUrl];
+      showImageSelection(generatedImages);
+    }, 1000);
   }
 }
 
-/* ═══ RESULT ═══ */
+function showImageSelection(images) {
+  document.getElementById('genLoadingState').style.display = 'none';
+  document.getElementById('genSelectState').classList.add('show');
+  selectedImageIndex = -1;
+  document.getElementById('btnSelectResult').disabled = true;
+  const grid = document.getElementById('gen4Grid');
+  grid.innerHTML = images.map((url, i) => `<div class="gen-4card" id="gen4card-${i}" onclick="selectGenImage(${i})"><img src="${url}" alt="Option ${i+1}" loading="lazy"><div class="card-check">✓</div></div>`).join('');
+}
+
+function selectGenImage(idx) {
+  document.querySelectorAll('.gen-4card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('gen4card-' + idx).classList.add('selected');
+  selectedImageIndex = idx;
+  document.getElementById('btnSelectResult').disabled = false;
+  document.getElementById('btnSelectResult').textContent = `✨ ใช้ภาพที่ ${idx+1}`;
+}
+
+function confirmSelectedImage() {
+  if (selectedImageIndex < 0) return;
+  const url = generatedImages[selectedImageIndex];
+  showResult(url, url === photoDataUrl);
+}
+
+/* ══ RESULT ══ */
 function showResult(url, isDemo = false) {
   resultUrl = url;
   document.getElementById('resultImg').src = url;
@@ -1162,106 +1335,94 @@ function showResult(url, isDemo = false) {
   document.getElementById('compareResult').src = url;
   document.getElementById('compareThemeName').textContent = selectedTheme.icon + ' ' + selectedTheme.name;
   document.getElementById('resultBadge').textContent = isDemo ? '⚠️ Demo Mode' : '✦ AI Generated';
-
-  generateQR(url);
+  generateQRCode(url);
   gotoScreen('result');
   showToast('🎉 สร้างภาพสำเร็จ!', 'success');
 }
 
-/* ═══ QR CODE ═══ */
-function generateQR(text) {
-  const canvas = document.getElementById('qrCanvas');
-  const ctx = canvas.getContext('2d');
-  const size = 120;
-  canvas.width = size; canvas.height = size;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0,0,size,size);
-
-  let hash = 0;
-  for(let i=0;i<text.length;i++) hash = ((hash<<5)-hash+text.charCodeAt(i))|0;
-
-  const cells = 10;
-  const cell = size / cells;
-  ctx.fillStyle = '#000000';
-  for(let r=0;r<cells;r++) for(let c=0;c<cells;c++) {
-    const inTL = r<3 && c<3, inTR = r<3 && c>=cells-3, inBL = r>=cells-3 && c<3;
-    if(inTL||inTR||inBL) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
-    if(((hash >> (r*cells+c)) & 1) || ((r+c)%3===0)) ctx.fillRect(c*cell,r*cell,cell-1,cell-1);
+/* ══ QR CODE ══ */
+function generateQRCode(text) {
+  const qrContainer = document.getElementById('qrCode');
+  qrContainer.innerHTML = '';
+  try {
+    new QRCode(qrContainer, {
+      text: text,
+      width: 120,
+      height: 120,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {
+    console.error('QR Code error:', e);
+    qrContainer.innerHTML = '<div style="font-size:10px;text-align:center;">QR Code<br>ไม่สามารถสร้างได้</div>';
   }
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(size/2-14,size/2-14,28,28);
-  ctx.fillStyle = '#D4AF37';
-  ctx.font = 'bold 18px sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('AI', size/2, size/2);
 }
 
-/* ═══ DOWNLOAD ═══ */
+/* ══ DOWNLOAD / SHARE ══ */
 async function downloadResult() {
   try {
     const img = document.getElementById('resultImg');
     const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth || 512;
-    canvas.height = img.naturalHeight || 512;
-    canvas.getContext('2d').drawImage(img, 0, 0);
+    canvas.width = img.naturalWidth || 1024;
+    canvas.height = img.naturalHeight || 1024;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.font = '12px "Space Mono", monospace';
+    ctx.fillStyle = 'rgba(212, 175, 55, 0.5)';
+    ctx.fillText('AI Photo Booth Thailand', 10, canvas.height - 10);
     const link = document.createElement('a');
     link.download = 'ai-photobooth-' + selectedTheme.id + '-' + Date.now() + '.jpg';
     link.href = canvas.toDataURL('image/jpeg', 0.93);
     link.click();
     showToast('💾 ดาวน์โหลดสำเร็จ!', 'success');
-  } catch(e) {
-    window.open(resultUrl, '_blank');
-  }
+  } catch(e) { window.open(resultUrl, '_blank'); showToast('เปิดรูปในแท็บใหม่', 'info'); }
 }
 
 async function shareResult() {
   try {
     const img = document.getElementById('resultImg');
     const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth || 512;
-    canvas.height = img.naturalHeight || 512;
+    canvas.width = img.naturalWidth || 1024;
+    canvas.height = img.naturalHeight || 1024;
     canvas.getContext('2d').drawImage(img, 0, 0);
     canvas.toBlob(async blob => {
-      const file = new File([blob], 'ai-booth.jpg', { type: 'image/jpeg' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'AI Photo Booth Thailand', files: [file] });
-      } else {
-        downloadResult();
-      }
+      const file = new File([blob], 'ai-booth.jpg', {type: 'image/jpeg'});
+      if (navigator.canShare && navigator.canShare({files: [file]})) {
+        await navigator.share({ title: 'AI Photo Booth Thailand', text: 'ลองดูรูปที่ AI สร้างให้ฉัน!', files: [file] });
+        showToast('แชร์สำเร็จ!', 'success');
+      } else { downloadResult(); }
     }, 'image/jpeg', 0.93);
-  } catch(e) { downloadResult(); }
+  } catch(e) { downloadResult(); showToast('แชร์ไม่สำเร็จ, ดาวน์โหลดแทน', 'error'); }
 }
 
 function startAgain() {
-  selectedTheme = null;
+  selectedTheme = null; generatedImages = []; selectedImageIndex = -1;
   resetPhoto();
   document.getElementById('btnGenerate').disabled = true;
   document.getElementById('btnGenerate').textContent = 'เลือกธีมก่อน';
   document.querySelectorAll('.theme-tile').forEach(t => t.classList.remove('selected'));
-  ['gs1','gs2','gs3','gs4'].forEach(id => {
-    document.getElementById(id).classList.remove('active','done');
-  });
+  const sampleImg = document.getElementById('themeSampleImg');
+  sampleImg.src = ''; sampleImg.style.display = 'none';
+  document.getElementById('themeSamplePlaceholder').style.display = 'flex';
+  document.getElementById('themeSamplePlaceholder').textContent = '🎭';
+  document.getElementById('themeSampleLabel').textContent = 'เลือกธีม';
+  ['gs1','gs2','gs3','gs4'].forEach(id => { document.getElementById(id).className = 'gen-step'; });
   document.getElementById('genProgressBar').style.width = '0%';
   gotoScreen('photo');
 }
 
-/* ═══ TOAST ═══ */
+/* ══ TOAST ══ */
 let toastTimer;
 function showToast(msg, type='info') {
   clearTimeout(toastTimer);
   const existing = document.querySelector('.toast');
   if (existing) existing.remove();
   const t = document.createElement('div');
-  t.className = 'toast ' + type;
-  t.textContent = msg;
+  t.className = 'toast ' + type; t.textContent = msg;
   document.body.appendChild(t);
-  toastTimer = setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 3000);
-}
-
-/* ═══ INIT ═══ */
-buildThemeGrid();
-checkSecureContext();
+  toastTimer = setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(), 300); }, 3000);
+}   
 </script>
 </body>
 </html>
