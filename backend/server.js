@@ -235,8 +235,11 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '../frontend')));
+<<<<<<< HEAD
 // app.use(express.static(path.join(__dirname, '../frontend'))); // ✅ serve static จาก /themes แทน
 
+=======
+>>>>>>> ccf8c3054c61e096a5502e0f5f93b8e8a594daa6
 
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -473,6 +476,7 @@ app.post('/api/generate-4', async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 // ========== 🛡️ ADMIN SYSTEM ==========
 const session = require('express-session');
 
@@ -581,6 +585,8 @@ app.get('/api/admin/system-status', requireAdmin, (req, res) => {
 
 
 
+=======
+>>>>>>> ccf8c3054c61e096a5502e0f5f93b8e8a594daa6
 app.use('/uploads', express.static(uploadDir));
 app.use((req, res) => res.status(404).json({ error: 'ไม่พบ endpoint', path: req.originalUrl }));
 app.use((err, req, res, next) => { 
