@@ -10,3 +10,10 @@ uploads/
 # OS
 .DS_Store
 Thumbs.db
+
+# IGTM
+node_modules/
+*.pt
+*.h5
+*.pkl
+*.zip
