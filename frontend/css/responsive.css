@@ -1,0 +1,18 @@
+@media (max-width:900px) { 
+  .hero-topbar, .features-section, .themes-section, .stats-section, .cta-section, .site-footer { 
+    padding-left:24px; padding-right:24px; 
+  } 
+  .hero-content { padding:0 24px 60px; } 
+  .features-grid { grid-template-columns:1fr; gap:2px; } 
+  .stats-grid { grid-template-columns:repeat(2,1fr); gap:32px; } 
+}
+
+@media (max-width:600px) { 
+  .hero-title { font-size:clamp(44px,12vw,72px); letter-spacing:-2px; } 
+  .hero-topbar { padding:20px 20px; } 
+  .hero-badge { display:none; } 
+  .hero-content { padding:0 20px 56px; } 
+  .features-section, .themes-section, .stats-section, .cta-section { padding:64px 20px; } 
+  .stats-grid { grid-template-columns:repeat(2,1fr); gap:24px; } 
+  .site-footer { flex-direction:column; gap:8px; text-align:center; padding:24px 20px; } 
+}

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AI Photo Booth ✦ Thailand</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="/img/icon_ai-gender.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/img/icon_ai-gender.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/img/icon_ai-gender.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/icon_ai-gender.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    
+    <!-- Fonts & Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs2-fix@0.0.1/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div id="app">
+
+        <!-- SCREEN 1: WELCOME -->
+        <div class="screen active" id="screen-welcome">
+            <section class="hero">
+                <div class="hero-video-bg">
+                    <video src="/videos/360-Promo-Video-Seethrough-Wedding.mp4" autoplay loop muted playsinline preload="auto" disablepictureinpicture tabindex="-1" onerror="this.style.display='none'"></video>
+                </div>
+                <div class="hero-topbar"><div class="hero-badge">Thailand · 2026</div></div>
+                <div class="hero-content">
+                    <h1 class="hero-title"><span>เปลี่ยนตัวตน</span><br>ด้วย <span class="ai">AI</span><span><span class="sub">Photo Booth Thailand</span></span></h1>
+                    <p class="hero-desc">ถ่ายรูป เลือกธีม รับภาพสวยทันที<br>เทคโนโลยี AI สร้างภาพระดับมืออาชีพใน 15 วินาที</p>
+                    <div class="hero-chips">
+                        <div class="chip"><span class="chip-dot"></span>ถ่ายหรืออัปโหลด</div>
+                        <div class="chip"><span class="chip-dot"></span>12 ธีมสุดปัง</div>
+                        <div class="chip"><span class="chip-dot"></span>สร้างใน 15 วิ</div>
+                        <div class="chip"><span class="chip-dot"></span>รับรูปทันที</div>
+                    </div>
+                    <div class="hero-cta">
+                        <button class="btn-hero" onclick="gotoScreen('photo')">เริ่มต้นใช้งาน</button>
+                        <span class="cta-hint">กดเพื่อเริ่ม</span>
+                    </div>
+                </div>
+                <div class="scroll-indicator"><div class="scroll-line"></div><span>scroll</span></div>
+            </section>
+            <section class="features-section">
+                <div class="section-eyebrow">How it works</div>
+                <h2 class="section-title">ง่ายแค่ <em>3 ขั้นตอน</em></h2>
+                <div class="features-grid">
+                    <div class="feat-card"><div class="feat-num">01</div><span class="feat-icon">📸</span><div class="feat-title">ถ่ายรูปหรืออัปโหลด</div><div class="feat-desc">ใช้กล้องหน้าถ่ายภาพตัวเองแบบ real-time หรืออัปโหลดรูปที่มีอยู่แล้วก็ได้</div></div>
+                    <div class="feat-card"><div class="feat-num">02</div><span class="feat-icon">🎭</span><div class="feat-title">เลือกธีมที่ชอบ</div><div class="feat-desc">มี 12 ธีมให้เลือก ตั้งแต่นักบินอวกาศ ซูเปอร์ฮีโร่ เจ้าหญิง ซามูไร ไปจนถึงไซเบอร์พังค์</div></div>
+                    <div class="feat-card"><div class="feat-num">03</div><span class="feat-icon">✨</span><div class="feat-title">รับภาพ AI คุณภาพสูง</div><div class="feat-desc">ระบบ AI สร้างภาพใน 15 วินาที ดาวน์โหลดได้ทันที หรือสแกน QR Code เพื่อรับภาพ</div></div>
+                </div>
+            </section>
+            <section class="themes-section">
+                <div class="section-eyebrow">12 Themes Available</div>
+                <h2 class="section-title">เลือกธีม<em>ในฝัน</em>ของคุณ</h2>
+                <div class="themes-marquee-wrap"><div class="themes-marquee" id="themesMarquee"></div></div>
+            </section>
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-item"><div class="stat-num">12</div><div class="stat-label">ธีมให้เลือก</div></div>
+                    <div class="stat-item"><div class="stat-num">15s</div><div class="stat-label">เวลาสร้างภาพ</div></div>
+                    <div class="stat-item"><div class="stat-num">4K</div><div class="stat-label">คุณภาพภาพ</div></div>
+                    <div class="stat-item"><div class="stat-num">∞</div><div class="stat-label">ความสนุก</div></div>
+                </div>
+            </section>
+            <section class="cta-section">
+                <div class="section-eyebrow">Ready?</div>
+                <h2 class="section-title">เริ่ม<em>สร้าง</em>ตัวตนใหม่</h2>
+                <p class="cta-subtitle">ฟรี · ไม่ต้องสมัครสมาชิก · รับภาพทันที</p>
+                <button class="btn-cta-large" onclick="gotoScreen('photo')">เริ่มใช้งานเลย</button>
+            </section>
+            <footer class="site-footer">
+                <div class="footer-logo">AI PHOTO BOOTH</div>
+                <div class="footer-copy">© 2026 · Thailand · Powered by Leonardo.ai</div>
+            </footer>
+        </div>
+
+        <!-- SCREEN 2: PHOTO -->
+        <div class="screen" id="screen-photo">
+            <div class="booth-header">
+                <div class="logo" onclick="gotoScreen('welcome')">AI <span>Photo</span> Booth</div>
+                <div class="step-dots" id="dots-photo">
+                    <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+                </div>
+            </div>
+            <div class="photo-body">
+                <div class="section-label">01 — ถ่ายรูปของคุณ</div>
+                <div id="httpsNotice" class="https-notice">⚠️ กล้องต้องใช้ HTTPS — กรุณาเปิดด้วย <strong>https://</strong> หรือ localhost</div>
+                <div class="camera-frame" id="cameraFrame">
+                    <div class="camera-placeholder" id="cameraPlaceholder"><div class="icon">🤳</div><p>กดถ่ายรูปหรืออัปโหลด</p></div>
+                    <video id="videoEl" style="display:none" autoplay playsinline muted></video>
+                    <img id="photoPreview" style="display:none" alt="">
+                    <div class="countdown-overlay" id="countdownOverlay"><div class="countdown-number" id="countdownNum">3</div></div>
+                    <div class="flash-overlay" id="flashOverlay"></div>
+                </div>
+                <canvas id="captureCanvas" style="display:none"></canvas>
+                <div class="photo-actions" id="btnGroupCamera">
+                    <button class="btn-action btn-secondary" onclick="openCamera()">📷 เปิดกล้อง</button>
+                    <button class="btn-action btn-secondary" onclick="document.getElementById('fileInput').click()">📁 อัปโหลด</button>
+                </div>
+                <div class="photo-actions" id="btnGroupCapture" style="display:none">
+                    <button class="btn-action btn-danger" onclick="resetPhoto()">↩ ถ่ายใหม่</button>
+                    <button class="btn-action btn-primary" onclick="validateAndGoToTheme()">เลือกธีม →</button>
+                </div>
+                <div class="photo-actions" id="btnGroupLive" style="display:none">
+                    <button class="btn-action btn-danger" onclick="closeCamera()">✕ ยกเลิก</button>
+                    <button class="btn-action btn-primary" id="snapBtn" onclick="startCountdown()">📸 ถ่ายรูป</button>
+                </div>
+                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg" style="display:none" onchange="handleUpload(this)">
+            </div>
+        </div>
+
+        <!-- SCREEN 3: THEME -->
+        <div class="screen" id="screen-theme">
+            <div class="booth-header">
+                <button class="btn-back" onclick="gotoScreen('photo')">กลับ</button>
+                <div class="logo" onclick="gotoScreen('welcome')" style="position:absolute;left:50%;transform:translateX(-50%)">AI <span>Photo</span> Booth</div>
+                <div class="step-dots" id="dots-theme">
+                    <div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div>
+                </div>
+            </div>
+            <div class="theme-body">
+                <div style="max-width:440px;margin:0 auto;">
+                    <div class="section-label">02 — เลือกธีม</div>
+                    <div class="preview-split" id="previewSplit">
+                        <div class="preview-split-card" id="userPhotoCard">
+                            <div class="psc-placeholder" id="userPhotoPlaceholder">🤳</div>
+                            <img id="userPhotoThumb" src="" alt="" style="display:none">
+                            <div class="psc-label">รูปของคุณ</div>
+                        </div>
+                        <div class="preview-split-card" id="themeSampleCard">
+                            <div class="psc-placeholder" id="themeSamplePlaceholder">🎭</div>
+                            <img id="themeSampleImg" src="" alt="" style="display:none">
+                            <div class="psc-label" id="themeSampleLabel">เลือกธีม</div>
+                        </div>
+                    </div>
+                    <div class="theme-grid-label">เลือก 1 ธีม</div>
+                    <div class="themes-grid" id="themeGrid"></div>
+                </div>
+            </div>
+            <div class="bottom-bar">
+                <button class="btn-full" id="btnGenerate" disabled onclick="startGenerate()">เลือกธีมก่อน</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: GENERATING -->
+        <div class="screen" id="screen-generating">
+            <div id="genLoadingState" style="display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;padding:40px 24px;">
+                <div class="gen-ring">
+                    <svg viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(212,175,55,0.1)" stroke-width="3"/>
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-dasharray="80 246" stroke-linecap="round"/>
+                        <defs><linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#F0D060"/></linearGradient></defs>
+                    </svg>
+                    <div class="gen-ring-inner" id="genEmoji"></div>
+                </div>
+                <div class="gen-title">กำลังสร้างภาพ...</div>
+                <div class="gen-subtitle">AI กำลังสร้าง 4 ภาพให้คุณเลือก</div>
+                <div class="gen-progress"><div class="gen-progress-bar" id="genProgressBar"></div></div>
+                <div class="gen-steps">
+                    <div class="gen-step" id="gs1"><span class="step-icon">🔍</span> วิเคราะห์ใบหน้า</div>
+                    <div class="gen-step" id="gs2"><span class="step-icon">🎨</span> สร้างธีมด้วย AI (4 ภาพ)</div>
+                    <div class="gen-step" id="gs3"><span class="step-icon">✨</span> ปรับแต่งรายละเอียด</div>
+                    <div class="gen-step" id="gs4"><span class="step-icon">✅</span> เตรียมภาพให้เลือก</div>
+                </div>
+            </div>
+            <div class="gen-results-overlay" id="genSelectState" style="padding-bottom:40px;">
+                <div class="gen-results-title">เลือกภาพที่ชอบที่สุด</div>
+                <div class="gen-results-subtitle">แตะภาพเพื่อเลือก</div>
+                <div class="gen-4grid" id="gen4Grid"></div>
+                <button class="btn-select-result" id="btnSelectResult" disabled onclick="confirmSelectedImage()">เลือกภาพนี้</button>
+                <button class="btn-back" onclick="gotoScreen('theme')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);margin-top:12px;">← ลองธีมอื่น</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 5: RESULT -->
+        <div class="screen" id="screen-result">
+            <div class="booth-header">
+                <button class="btn-back" onclick="gotoScreen('theme')">← เลือกธีมอื่น</button>
+                <div class="logo" onclick="gotoScreen('welcome')" style="position:absolute;left:50%;transform:translateX(-50%)">AI <span>Photo</span> Booth</div>
+                <div class="step-dots" id="dots-result">
+                    <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div>
+                </div>
+            </div>
+            <div class="result-body">
+                <div class="section-label">03 — ผลลัพธ์ของคุณ</div>
+                <div class="result-frame">
+                    <img id="resultImg" src="" alt="AI Result">
+                    <div class="result-badge" id="resultBadge">✦ AI Generated</div>
+                </div>
+                <div class="result-compare">
+                    <div class="compare-card"><img id="compareOriginal" src="" alt="Original"><div class="compare-label">ต้นฉบับ</div></div>
+                    <div class="compare-card"><img id="compareResult" src="" alt="Result"><div class="compare-label" id="compareThemeName">AI Theme</div></div>
+                </div>
+                <div class="qr-section">
+                    <div class="qr-title">📲 สแกน QR Code เพื่อรับภาพ</div>
+                    <div class="qr-code" id="qrCodeContainer"><div id="qrCode"></div></div>
+                    <div class="qr-hint">หรือกดปุ่มดาวน์โหลดด้านล่าง</div>
+                </div>
+                <div class="share-row">
+                    <button class="btn-share download" onclick="downloadResult()"><span class="s-icon">💾</span>ดาวน์โหลด</button>
+                    <button class="btn-share share" onclick="shareResult()"><span class="s-icon">📤</span>แชร์</button>
+                    <button class="btn-share again" onclick="startAgain()"><span class="s-icon">🔄</span>ถ่ายใหม่</button>
+                </div>
+                <button class="btn-home-result" onclick="gotoScreen('welcome')">กลับหน้าหลัก</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/config.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/generate.js"></script>
+    <script src="js/result.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
