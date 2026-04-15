@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AI Photo Booth ✦ Thailand</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #D4AF37;
+  --gold-light: #F0D060;
+  --black: #0A0A0A;
+  --dark: #111118;
+  --surface: #1A1A24;
+  --surface2: #22223A;
+  --text: #F0EEE8;
+  --text-muted: #888;
+  --accent: #FF3C6E;
+  --green: #00E5A0;
+  --radius: 20px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+
+body {
+  font-family: 'Kanit', sans-serif;
+  background: var(--black);
+  color: var(--text);
+  user-select: none;
+}
+
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(212,175,55,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,175,55,0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+.bg-glow {
+  position: fixed; z-index: 0; pointer-events: none;
+  border-radius: 50%; filter: blur(120px); opacity: 0.12;
+}
+.bg-glow-1 { width:600px; height:600px; top:-200px; left:-100px; background: var(--gold); }
+.bg-glow-2 { width:400px; height:400px; bottom:-100px; right:-100px; background: var(--accent); }
+
+/* Video background — welcome screen only */
+.welcome-video-bg {
+  position: absolute; inset: 0; z-index: 0; overflow: hidden;
+}
+.welcome-video-bg video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  display: block;
+}
+.welcome-video-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(10, 10, 10, 0.62);
+  pointer-events: none;
+}
+#screen-welcome { position: relative; overflow: hidden; }
+
+#app {
+  position: relative; z-index: 1;
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-y: auto; overflow-x: hidden;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+
+.booth-header {
+  width: 100%; padding: 18px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(212,175,55,0.15);
+  flex-shrink: 0;
+}
+.logo {
+  font-size: 18px; font-weight: 900; letter-spacing: 1px;
+  color: var(--gold);
+  display: flex; align-items: center; gap: 8px;
+}
+.logo span { color: var(--text); font-weight: 300; }
+.step-dots { display: flex; gap: 8px; }
+.step-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--surface2); transition: all 0.4s;
+}
+.step-dot.done { background: var(--gold); }
+.step-dot.active { background: var(--gold); box-shadow: 0 0 10px var(--gold); width: 24px; border-radius: 4px; }
+
+/* ══ SCREEN 1: WELCOME — Pro redesign ══ */
+#screen-welcome {
+  justify-content: flex-end; align-items: flex-start;
+  padding: 0;
+}
+
+/* Gradient overlay — dark bottom, lighter top */
+.welcome-video-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to top,  rgba(5,5,8,0.97) 0%, rgba(5,5,8,0.65) 45%, rgba(5,5,8,0.15) 100%),
+    linear-gradient(to right, rgba(5,5,8,0.5) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Top bar — logo + contact */
+.welcome-topbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 48px;
+}
+.welcome-logo {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; letter-spacing: 4px; color: var(--gold);
+  text-transform: uppercase; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.welcome-logo::before {
+  content: '';
+  width: 28px; height: 1px; background: var(--gold); display: block;
+}
+.welcome-contact {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; letter-spacing: 2px; color: rgba(240,238,232,0.5);
+  text-transform: uppercase;
+}
+
+/* Main content — bottom-left anchor like 360booththailand */
+.welcome-content {
+  position: relative; z-index: 5;
+  width: 100%;
+  padding: 0 48px 64px;
+  display: flex; flex-direction: column; align-items: flex-start;
+  animation: welcomeFadeUp 1.1s cubic-bezier(.22,1,.36,1) both;
+}
+
+@keyframes welcomeFadeUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; letter-spacing: 5px; color: var(--gold);
+  text-transform: uppercase; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+  animation: welcomeFadeUp 1.1s .15s cubic-bezier(.22,1,.36,1) both;
+}
+.welcome-eyebrow::before {
+  content: '';
+  width: 36px; height: 1px; background: var(--gold); display: block;
+}
+
+.welcome-title {
+  font-size: clamp(48px, 7.5vw, 110px);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -2px;
+  color: #fff;
+  margin-bottom: 28px;
+  text-align: left;
+  animation: welcomeFadeUp 1.1s .25s cubic-bezier(.22,1,.36,1) both;
+}
+.welcome-title .ai-text {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 60%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  display: inline;
+}
+.welcome-title .line2 {
+  display: block;
+  color: rgba(255,255,255,0.35);
+  font-weight: 300;
+  font-size: clamp(28px, 4vw, 56px);
+  letter-spacing: 0px;
+  margin-top: 4px;
+}
+
+.welcome-subtitle {
+  font-size: clamp(14px, 1.5vw, 18px);
+  color: rgba(240,238,232,0.6);
+  line-height: 1.7;
+  max-width: 500px;
+  margin-bottom: 48px;
+  font-weight: 300;
+  letter-spacing: 0.3px;
+  animation: welcomeFadeUp 1.1s .35s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Chips row */
+.welcome-chips {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 48px;
+  animation: welcomeFadeUp 1.1s .45s cubic-bezier(.22,1,.36,1) both;
+}
+.feat-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 20px;
+  border-radius: 3px;
+  border: 1px solid rgba(212,175,55,0.2);
+  background: rgba(212,175,55,0.04);
+  font-size: 12px; font-weight: 400;
+  color: rgba(240,238,232,0.7);
+  letter-spacing: 1.5px;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+.feat-chip:hover {
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.1);
+  color: var(--gold);
+}
+.feat-chip .chip-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+}
+
+/* CTA button row */
+.welcome-cta {
+  display: flex; align-items: center; gap: 32px;
+  animation: welcomeFadeUp 1.1s .55s cubic-bezier(.22,1,.36,1) both;
+}
+.btn-start {
+  background: var(--gold);
+  color: var(--black); border: none;
+  padding: 18px 52px;
+  border-radius: 3px;
+  font-size: 15px; font-weight: 700;
+  font-family: 'Kanit', sans-serif; cursor: pointer;
+  letter-spacing: 2px; text-transform: uppercase;
+  transition: all 0.3s;
+  position: relative; overflow: hidden;
+}
+.btn-start::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0); transition: background 0.3s;
+}
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 12px 48px rgba(212,175,55,0.45); }
+.btn-start:hover::after { background: rgba(255,255,255,0.08); }
+.btn-start:active { transform: translateY(0); }
+
+.btn-secondary-link {
+  color: rgba(240,238,232,0.5);
+  font-size: 13px; font-weight: 400;
+  letter-spacing: 1px;
+  font-family: 'Space Mono', monospace;
+  cursor: default;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-secondary-link::before {
+  content: '—'; color: var(--gold);
+}
+
+/* Scroll indicator */
+.welcome-scroll {
+  position: absolute; bottom: 36px; right: 48px; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  animation: welcomeFadeUp 1.4s .8s cubic-bezier(.22,1,.36,1) both;
+}
+.welcome-scroll span {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; letter-spacing: 3px;
+  color: rgba(240,238,232,0.3); text-transform: uppercase;
+  writing-mode: vertical-rl;
+}
+.scroll-line {
+  width: 1px; height: 48px;
+  background: linear-gradient(to bottom, var(--gold), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse {
+  0%,100% { opacity: 0.3; transform: scaleY(1); }
+  50%      { opacity: 1;   transform: scaleY(1.1); }
+}
+
+/* Step counter — bottom right */
+.welcome-counter {
+  position: absolute; bottom: 64px; right: 48px; z-index: 10;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; color: rgba(240,238,232,0.25);
+  letter-spacing: 2px;
+}
+
+@media (max-width: 768px) {
+  .welcome-topbar { padding: 20px 24px; }
+  .welcome-content { padding: 0 24px 48px; }
+  .welcome-title { font-size: clamp(40px, 11vw, 72px); letter-spacing: -1px; }
+  .welcome-scroll { right: 24px; }
+  .welcome-counter { right: 24px; bottom: 48px; }
+  .welcome-contact { display: none; }
+}
+
+/* SCREEN 2: PHOTO */
+#screen-photo { padding: 0; justify-content: flex-start; }
+.photo-body {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 20px 20px 24px; gap: 16px; width: 100%;
+}
+.section-label {
+  font-size: 12px; letter-spacing: 3px; color: var(--gold);
+  font-family: 'Space Mono', monospace; text-transform: uppercase;
+  align-self: flex-start; margin-left: 4px;
+}
+.camera-frame {
+  width: 100%; max-width: 420px;
+  aspect-ratio: 3/4;
+  border-radius: 24px; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid rgba(212,175,55,0.2);
+  position: relative; flex-shrink: 0;
+}
+.camera-frame video,
+.camera-frame img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.camera-placeholder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; color: var(--text-muted);
+}
+.camera-placeholder .icon { font-size: 56px; opacity: 0.5; }
+.camera-placeholder p { font-size: 14px; opacity: 0.6; }
+
+.countdown-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.countdown-overlay.show { display: flex; }
+.countdown-number {
+  font-size: 120px; font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 40px var(--gold), 0 0 80px rgba(212,175,55,0.5);
+  animation: countPulse 0.9s ease-out;
+}
+@keyframes countPulse {
+  0% { transform: scale(1.3); opacity: 0.5; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.flash-overlay {
+  position: absolute; inset: 0;
+  background: white; opacity: 0;
+  pointer-events: none; z-index: 20;
+  transition: opacity 0.05s;
+}
+.flash-overlay.flash { animation: flashAnim 0.3s ease-out; }
+@keyframes flashAnim {
+  0% { opacity: 1; } 100% { opacity: 0; }
+}
+
+.photo-actions { display: flex; gap: 12px; width: 100%; max-width: 420px; }
+.btn-action {
+  flex: 1; padding: 14px; border-radius: 14px;
+  border: none; cursor: pointer; font-size: 14px; font-weight: 600;
+  font-family: 'Kanit', sans-serif; transition: all 0.25s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary { background: var(--gold); color: var(--black); }
+.btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid rgba(255,255,255,0.08); }
+.btn-secondary:hover { background: rgba(255,255,255,0.1); }
+.btn-danger { background: rgba(255,60,110,0.15); color: var(--accent); border: 1px solid rgba(255,60,110,0.2); }
+
+.https-notice {
+  background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3);
+  border-radius: 12px; padding: 10px 14px;
+  font-size: 12px; color: #ffc107; text-align: center;
+  width: 100%; max-width: 420px; display: none;
+}
+
+/* SCREEN 3: THEME */
+#screen-theme { padding: 0; justify-content: flex-start; }
+.theme-body {
+  flex: 1; width: 100%; padding: 12px 20px 100px;
+  overflow-y: auto;
+}
+.theme-preview {
+  width: 100%; max-width: 420px; margin: 0 auto 16px;
+  aspect-ratio: 3/4; border-radius: 20px; overflow: hidden;
+  background: var(--surface); border: 1px solid rgba(212,175,55,0.2);
+  position: relative; max-height: 200px;
+}
+.theme-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.theme-grid-label {
+  font-size: 13px; color: var(--text-muted); margin-bottom: 12px;
+  text-align: center;
+}
+
+.themes-scroll {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 420px; margin: 0 auto;
+}
+.theme-tile {
+  aspect-ratio: 1; border-radius: 14px;
+  background: var(--surface2);
+  border: 2px solid transparent;
+  cursor: pointer; transition: all 0.25s;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px; padding: 8px;
+  position: relative; overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.theme-tile::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(212,175,55,0.08));
+  opacity: 0; transition: opacity 0.3s;
+}
+.theme-tile:hover::before { opacity: 1; }
+.theme-tile:hover { border-color: rgba(212,175,55,0.4); transform: translateY(-2px); }
+.theme-tile.selected {
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.1);
+  box-shadow: 0 0 20px rgba(212,175,55,0.2);
+}
+.theme-tile .t-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; pointer-events: none;
+}
+.theme-tile .t-name { font-size: 11px; font-weight: 600; text-align: center; line-height: 1.2; pointer-events: none; }
+.theme-tile .t-en { font-size: 9px; color: var(--text-muted); font-family: 'Space Mono', monospace; pointer-events: none; }
+.theme-tile.selected .t-name { color: var(--gold); }
+
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 16px 20px;
+  background: linear-gradient(to top, var(--black) 70%, transparent);
+  z-index: 50;
+}
+.btn-full {
+  width: 100%; max-width: 420px; margin: 0 auto;
+  display: block; padding: 16px;
+  border-radius: 16px; border: none; cursor: pointer;
+  font-size: 17px; font-weight: 700; font-family: 'Kanit', sans-serif;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--black);
+  box-shadow: 0 6px 24px rgba(212,175,55,0.3);
+  transition: all 0.3s;
+}
+.btn-full:hover:not(:disabled) { box-shadow: 0 8px 32px rgba(212,175,55,0.5); }
+.btn-full:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* SCREEN 4: GENERATING */
+#screen-generating {
+  justify-content: center; align-items: center;
+  padding: 40px 24px; gap: 24px; text-align: center;
+}
+.gen-ring {
+  width: 120px; height: 120px; position: relative;
+}
+.gen-ring svg { animation: spinRing 2s linear infinite; }
+@keyframes spinRing { to { transform: rotate(360deg); } }
+.gen-ring-inner {
+  position: absolute; inset: 16px;
+  background: var(--surface);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+}
+.gen-title { font-size: 24px; font-weight: 700; }
+.gen-subtitle { font-size: 14px; color: var(--text-muted); max-width: 280px; line-height: 1.6; }
+.gen-progress {
+  width: 260px; height: 3px; background: var(--surface2);
+  border-radius: 2px; overflow: hidden;
+}
+.gen-progress-bar {
+  height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius: 2px; transition: width 0.5s ease;
+  width: 0%;
+}
+.gen-steps {
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: 280px; width: 100%;
+}
+.gen-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; border-radius: 10px;
+  background: var(--surface); opacity: 0.4; transition: all 0.4s;
+  font-size: 13px;
+}
+.gen-step.active { opacity: 1; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.2); }
+.gen-step.done { opacity: 0.8; }
+.gen-step .step-icon { font-size: 16px; width: 24px; text-align: center; }
+
+/* SCREEN 5: RESULT */
+#screen-result { padding: 0; justify-content: flex-start; }
+.result-body {
+  flex: 1; width: 100%; padding: 12px 20px 120px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  overflow-y: auto;
+}
+.result-frame {
+  width: 100%; max-width: 420px;
+  border-radius: 24px; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.2);
+  position: relative;
+}
+.result-frame img { width: 100%; display: block; }
+.result-badge {
+  position: absolute; top: 14px; right: 14px;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  border: 1px solid rgba(212,175,55,0.4); border-radius: 20px;
+  padding: 6px 12px; font-size: 11px; color: var(--gold);
+  font-family: 'Space Mono', monospace;
+}
+.result-compare {
+  width: 100%; max-width: 420px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.compare-card {
+  border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06); position: relative;
+}
+.compare-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.compare-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 6px; text-align: center; font-size: 11px;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+}
+
+.qr-section {
+  width: 100%; max-width: 420px;
+  background: var(--surface);
+  border-radius: 20px; padding: 20px;
+  border: 1px solid rgba(212,175,55,0.15);
+  text-align: center;
+}
+.qr-title { font-size: 14px; color: var(--text-muted); margin-bottom: 14px; }
+.qr-code {
+  width: 140px; height: 140px; margin: 0 auto 14px;
+  background: white; border-radius: 12px; padding: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.qr-hint { font-size: 12px; color: var(--text-muted); }
+
+.share-row { display: flex; gap: 10px; width: 100%; max-width: 420px; }
+.btn-share {
+  flex: 1; padding: 12px 8px; border-radius: 12px;
+  border: none; cursor: pointer; font-size: 13px; font-weight: 600;
+  font-family: 'Kanit', sans-serif; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.btn-share .s-icon { font-size: 20px; }
+.btn-share.download { background: var(--gold); color: var(--black); }
+.btn-share.share   { background: var(--surface2); color: var(--text); border: 1px solid rgba(255,255,255,0.1); }
+.btn-share.again   { background: rgba(255,60,110,0.12); color: var(--accent); border: 1px solid rgba(255,60,110,0.2); }
+
+.toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text); padding: 12px 24px; border-radius: 50px;
+  font-size: 14px; z-index: 9999; white-space: nowrap;
+  animation: toastIn 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+.toast.success { border-color: rgba(0,229,160,0.4); color: var(--green); }
+.toast.error   { border-color: rgba(255,60,110,0.4); color: var(--accent); }
+@keyframes toastIn {
+  from { opacity:0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+}
+
+.t-bg-space    { background: linear-gradient(135deg,#0A0A2E,#1A1A4E); }
+.t-bg-hero     { background: linear-gradient(135deg,#1A0A2E,#3A1A6E); }
+.t-bg-princess { background: linear-gradient(135deg,#2E0A1A,#6E1A4E); }
+.t-bg-samurai  { background: linear-gradient(135deg,#1A0A0A,#4E1A1A); }
+.t-bg-alien    { background: linear-gradient(135deg,#0A1A0A,#1A4E2E); }
+.t-bg-pirate   { background: linear-gradient(135deg,#1A150A,#3E2A0A); }
+.t-bg-cyber    { background: linear-gradient(135deg,#0A0A1A,#1A0A3E); }
+.t-bg-wizard   { background: linear-gradient(135deg,#150A2E,#2E0A4E); }
+.t-bg-king     { background: linear-gradient(135deg,#1A1500,#3E3200); }
+.t-bg-ninja    { background: linear-gradient(135deg,#0A0A0A,#1A1A1A); }
+.t-bg-retro    { background: linear-gradient(135deg,#1A0A1A,#3E0A2E); }
+.t-bg-snow     { background: linear-gradient(135deg,#0A1A2E,#0A2E4E); }
+
+@media (min-height: 800px) {
+  .theme-preview { max-height: 260px; }
+}
+@media (max-width: 380px) {
+  .themes-scroll { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<div id="app">
+
+  <!-- SCREEN 1: WELCOME -->
+  <div class="screen active" id="screen-welcome">
+
+    <!-- Video background -->
+    <div class="welcome-video-bg" aria-hidden="true">
+      <video
+        src="/videos/360-Promo-Video-Seethrough-Wedding.mp4"
+        autoplay loop muted playsinline preload="auto"
+        disablepictureinpicture
+        controlslist="nodownload nofullscreen noremoteplayback"
+        tabindex="-1">
+      </video>
+    </div>
+
+    <!-- Top bar -->
+    <div class="welcome-topbar">
+      <!-- <div class="welcome-logo">AI Photo Booth</div> -->
+      <div class="welcome-contact">Thailand · 2026</div>
+    </div>
+
+    <!-- Main content — bottom-left -->
+    <div class="welcome-content">
+      <!-- <div class="welcome-eyebrow">Image-to-Image AI Technology</div> -->
+
+      <h3 class="welcome-title">
+        <br>เปลี่ยนตัวตนของคุณ<br>ด้วย <span class="ai-text">AI</span>
+        <span class="line2">Photo Booth Thailand</span>
+      </h3>
+
+      <p class="welcome-subtitle">
+        ถ่ายรูป เลือกธีม รับภาพสวยทันที<br>
+        เทคโนโลยี AI สร้างภาพ ใน 15 วินาที
+      </p>
+
+      <div class="welcome-chips">
+        <div class="feat-chip"><span class="chip-dot"></span>ถ่ายหรืออัปโหลด</div>
+        <div class="feat-chip"><span class="chip-dot"></span>12 ธีมสุดปัง</div>
+        <div class="feat-chip"><span class="chip-dot"></span>สร้างใน 15 วิ</div>
+        <div class="feat-chip"><span class="chip-dot"></span>รับรูปทันที</div>
+      </div>
+
+      <div class="welcome-cta">
+        <button class="btn-start" onclick="gotoScreen('photo')">เริ่มต้นใช้งาน</button>
+        <span class="btn-secondary-link">กดเพื่อเริ่ม</span>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="welcome-scroll">
+      <div class="scroll-line"></div>
+      <span>scroll</span>
+    </div>
+
+  </div>
+
+  <!-- SCREEN 2: PHOTO -->
+  <div class="screen" id="screen-photo">
+    <div class="booth-header">
+      <div class="logo">AI <span>Photo</span> Booth</div>
+      <div class="step-dots">
+        <div class="step-dot active" id="dot1"></div>
+        <div class="step-dot" id="dot2"></div>
+        <div class="step-dot" id="dot3"></div>
+      </div>
+    </div>
+    <div class="photo-body">
+      <div class="section-label">01 — ถ่ายรูปของคุณ</div>
+
+      <div id="httpsNotice" class="https-notice">
+        ⚠️ กล้องต้องใช้ HTTPS — กรุณาเปิดด้วย <strong>https://</strong> หรือ localhost
+      </div>
+
+      <div class="camera-frame" id="cameraFrame">
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <div class="icon">🤳</div>
+          <p>กดถ่ายรูปหรืออัปโหลด</p>
+        </div>
+        <video id="videoEl" style="display:none" autoplay playsinline muted></video>
+        <img id="photoPreview" style="display:none" alt="">
+        <div class="countdown-overlay" id="countdownOverlay">
+          <div class="countdown-number" id="countdownNum">3</div>
+        </div>
+        <div class="flash-overlay" id="flashOverlay"></div>
+      </div>
+
+      <canvas id="captureCanvas" style="display:none"></canvas>
+
+      <div class="photo-actions" id="btnGroupCamera">
+        <button class="btn-action btn-secondary" onclick="openCamera()">📷 เปิดกล้อง</button>
+        <button class="btn-action btn-secondary" onclick="document.getElementById('fileInput').click()">📁 อัปโหลด</button>
+      </div>
+      <div class="photo-actions" id="btnGroupCapture" style="display:none">
+        <button class="btn-action btn-danger" onclick="resetPhoto()">↩ ถ่ายใหม่</button>
+        <button class="btn-action btn-primary" onclick="gotoScreen('theme')">เลือกธีม →</button>
+      </div>
+      <div class="photo-actions" id="btnGroupLive" style="display:none">
+        <button class="btn-action btn-danger" onclick="closeCamera()">✕ ยกเลิก</button>
+        <button class="btn-action btn-primary" id="snapBtn" onclick="startCountdown()">📸 ถ่ายรูป</button>
+      </div>
+
+      <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleUpload(this)">
+    </div>
+  </div>
+
+  <!-- SCREEN 3: THEME -->
+  <div class="screen" id="screen-theme">
+    <div class="booth-header">
+      <button class="btn-action btn-secondary" style="padding:8px 14px;font-size:13px;border-radius:10px;flex:none;width:auto;" onclick="event.stopPropagation();gotoScreen('photo')">← กลับ</button>
+      <div class="step-dots">
+        <div class="step-dot done"></div>
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+      </div>
+    </div>
+    <div class="theme-body">
+      <div style="max-width:420px;margin:0 auto;">
+        <div class="section-label">02 — เลือกธีม</div>
+        <div class="theme-preview" id="themePreviewFrame">
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;flex-direction:column;gap:8px;">
+            <span style="font-size:32px;opacity:0.4">🎭</span>
+            <span>เลือกธีมด้านล่าง</span>
+          </div>
+        </div>
+        <div class="theme-grid-label">เลือก 1 ธีม</div>
+        <div class="themes-scroll" id="themeGrid"></div>
+      </div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn-full" id="btnGenerate" disabled onclick="startGenerate()">เลือกธีมก่อน</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: GENERATING -->
+  <div class="screen" id="screen-generating">
+    <div class="gen-ring">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(212,175,55,0.1)" stroke-width="3"/>
+        <circle cx="60" cy="60" r="52" fill="none" stroke="url(#goldGrad)" stroke-width="3"
+          stroke-dasharray="80 246" stroke-linecap="round"/>
+        <defs>
+          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#D4AF37"/>
+            <stop offset="100%" stop-color="#F0D060"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="gen-ring-inner" id="genEmoji">✨</div>
+    </div>
+    <div class="gen-title">กำลังสร้างภาพ...</div>
+    <div class="gen-subtitle" id="genSubtitle">AI กำลังแต่งธีมให้กับภาพของคุณ</div>
+    <div class="gen-progress"><div class="gen-progress-bar" id="genProgressBar"></div></div>
+    <div class="gen-steps">
+      <div class="gen-step" id="gs1"><span class="step-icon">🔍</span> วิเคราะห์ใบหน้า</div>
+      <div class="gen-step" id="gs2"><span class="step-icon">🎨</span> สร้างธีมด้วย AI</div>
+      <div class="gen-step" id="gs3"><span class="step-icon">✨</span> ปรับแต่งรายละเอียด</div>
+      <div class="gen-step" id="gs4"><span class="step-icon">📦</span> เตรียมภาพสำหรับดาวน์โหลด</div>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="booth-header">
+      <div class="logo">AI <span>Photo</span> Booth</div>
+      <div class="step-dots">
+        <div class="step-dot done"></div>
+        <div class="step-dot done"></div>
+        <div class="step-dot active"></div>
+      </div>
+    </div>
+    <div class="result-body">
+      <div class="section-label">03 — ผลลัพธ์ของคุณ</div>
+
+      <div class="result-frame">
+        <img id="resultImg" src="" alt="AI Result">
+        <div class="result-badge" id="resultBadge">AI Generated</div>
+      </div>
+
+      <div class="result-compare">
+        <div class="compare-card">
+          <img id="compareOriginal" src="" alt="Original">
+          <div class="compare-label">ต้นฉบับ</div>
+        </div>
+        <div class="compare-card">
+          <img id="compareResult" src="" alt="Result">
+          <div class="compare-label" id="compareThemeName">AI Theme</div>
+        </div>
+      </div>
+
+      <div class="qr-section">
+        <div class="qr-title">📲 สแกน QR Code เพื่อรับภาพ</div>
+        <div class="qr-code" id="qrCodeContainer">
+          <canvas id="qrCanvas" width="120" height="120"></canvas>
+        </div>
+        <div class="qr-hint">หรือกดปุ่มดาวน์โหลดด้านล่าง</div>
+      </div>
+
+      <div class="share-row">
+        <button class="btn-share download" onclick="downloadResult()">
+          <span class="s-icon">💾</span> ดาวน์โหลด
+        </button>
+        <button class="btn-share share" onclick="shareResult()">
+          <span class="s-icon">📤</span> แชร์
+        </button>
+        <button class="btn-share again" onclick="startAgain()">
+          <span class="s-icon">🔄</span> ถ่ายใหม่
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══ THEMES — prompt บอก AI ชัดเจน: เปลี่ยนแค่ชุด + พื้นหลัง ห้ามเปลี่ยนหน้า ═══ */
+const THEMES = [
+  {
+    id:'space', name:'นักบินอวกาศ', en:'Astronaut', bg:'t-bg-space', icon:'🚀', color:'#4488FF',
+    prompt:
+      'Change ONLY the costume to a NASA astronaut suit with white spacesuit and helmet visor. ' +
+      'Change ONLY the background to a space station interior with Earth visible through windows and stars outside. ' +
+      'Keep the face completely identical to reference. ' +
+      'Cinematic lighting, 8k photo realistic, ultra detailed spacesuit.'
+  },
+  {
+    id:'hero', name:'ซูเปอร์ฮีโร่', en:'Hero', bg:'t-bg-hero', icon:'⚡', color:'#8844FF',
+    prompt:
+      'Change ONLY the costume to a superhero outfit with dynamic cape and chest emblem. ' +
+      'Change ONLY the background to a dramatic city skyline at night with lightning. ' +
+      'Keep the face completely identical to reference. ' +
+      'Heroic pose, cinematic lighting, comic book style, ultra detailed.'
+  },
+  {
+    id:'princess', name:'เจ้าหญิง', en:'Princess', bg:'t-bg-princess', icon:'👑', color:'#FF44AA',
+    prompt:
+      'Change ONLY the costume to an elegant princess gown with tiara and jewels. ' +
+      'Change ONLY the background to a magical fairy-tale castle hall with chandeliers and golden light. ' +
+      'Keep the face completely identical to reference. ' +
+      'Fantasy painting style, golden hour lighting, ultra detailed gown.'
+  },
+  {
+    id:'samurai', name:'ซามูไร', en:'Samurai', bg:'t-bg-samurai', icon:'⚔️', color:'#FF4444',
+    prompt:
+      'Change ONLY the costume to traditional Japanese samurai armor with kabuto helmet and katana. ' +
+      'Change ONLY the background to a Japanese temple courtyard with cherry blossoms falling. ' +
+      'Keep the face completely identical to reference. ' +
+      'Cinematic epic photography, dramatic lighting, ultra detailed armor.'
+  },
+  {
+    id:'alien', name:'เอเลี่ยน', en:'Alien', bg:'t-bg-alien', icon:'🛸', color:'#44FF88',
+    prompt:
+      'Change ONLY the costume to an alien being outfit with bioluminescent patterns and sci-fi suit. ' +
+      'Change ONLY the background to a sci-fi spacecraft interior with glowing panels and stars. ' +
+      'Keep the face completely identical to reference but add subtle alien skin texture overlay only. ' +
+      'Otherworldly atmosphere, ultra detailed, sci-fi film style.'
+  },
+  {
+    id:'pirate', name:'โจรสลัด', en:'Pirate', bg:'t-bg-pirate', icon:'🏴‍☠️', color:'#FF8844',
+    prompt:
+      'Change ONLY the costume to a pirate captain outfit with tricorn hat, vintage coat, and sash. ' +
+      'Change ONLY the background to an ocean ship deck at golden sunset with sails and sea. ' +
+      'Keep the face completely identical to reference. ' +
+      'Adventure film style, dramatic lighting, ultra detailed costume.'
+  },
+  {
+    id:'cyber', name:'ไซเบอร์พังค์', en:'Cyberpunk', bg:'t-bg-cyber', icon:'🤖', color:'#44FFFF',
+    prompt:
+      'Change ONLY the costume to a cyberpunk outfit with neon-lit jacket, tech augmentation accessories, and futuristic gear. ' +
+      'Change ONLY the background to a rainy neon-lit cyberpunk city street at night with holographic signs. ' +
+      'Keep the face completely identical to reference. ' +
+      'Blade runner aesthetic, cinematic, ultra detailed.'
+  },
+  {
+    id:'wizard', name:'พ่อมด', en:'Wizard', bg:'t-bg-wizard', icon:'🔮', color:'#AA44FF',
+    prompt:
+      'Change ONLY the costume to a wizard robe with ornate patterns, pointed hat, and magical staff. ' +
+      'Change ONLY the background to a mystical forest clearing with glowing magical particles and floating orbs. ' +
+      'Keep the face completely identical to reference. ' +
+      'Fantasy art style, magical atmospheric lighting, ultra detailed robe.'
+  },
+  {
+    id:'king', name:'ราชา', en:'King', bg:'t-bg-king', icon:'👑', color:'#FFCC00',
+    prompt:
+      'Change ONLY the costume to royal king attire with golden crown, jeweled robe, and royal scepter. ' +
+      'Change ONLY the background to a grand golden throne room with marble columns and royal banners. ' +
+      'Keep the face completely identical to reference. ' +
+      'Renaissance painting style, regal lighting, ultra detailed crown and robes.'
+  },
+  {
+    id:'ninja', name:'นินจา', en:'Ninja', bg:'t-bg-ninja', icon:'🥷', color:'#888888',
+    prompt:
+      'Change ONLY the costume to a full black ninja outfit with mask covering the lower face, ninja tools. ' +
+      'Change ONLY the background to a Japanese rooftop at night with moonlight and city lights below. ' +
+      'Keep the face eyes and upper face completely identical to reference. ' +
+      'Stealthy cinematic atmosphere, dark dramatic lighting, ultra detailed.'
+  },
+  {
+    id:'retro', name:'ยุค 80', en:'Retro 80s', bg:'t-bg-retro', icon:'🕺', color:'#FF44FF',
+    prompt:
+      'Change ONLY the costume to a colorful retro 80s outfit with bold patterns, leg warmers, and vintage accessories. ' +
+      'Change ONLY the background to a disco dance floor with neon lights, mirror ball, and synthwave grid. ' +
+      'Keep the face completely identical to reference. ' +
+      'Synthwave aesthetic, vibrant retro colors, film grain effect.'
+  },
+  {
+    id:'snow', name:'สโนว์บอร์ด', en:'Snowboard', bg:'t-bg-snow', icon:'🏂', color:'#88CCFF',
+    prompt:
+      'Change ONLY the costume to professional snowboarder gear with helmet, goggles on forehead, winter jacket, and gloves. ' +
+      'Change ONLY the background to a snowy mountain peak with clear blue sky and ski slopes. ' +
+      'Keep the face completely identical to reference. ' +
+      'Professional sports photography, sharp focus, ultra detailed winter gear.'
+  }
+];
+
+/* ═══ STATE ═══ */
+let currentScreen = 'welcome';
+let photoDataUrl = null;
+let photoBase64 = null;
+let selectedTheme = null;
+let resultUrl = null;
+let cameraStream = null;
+
+/* ═══ NAVIGATION ═══ */
+function gotoScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  currentScreen = name;
+  if (name === 'photo') checkSecureContext();
+}
+
+/* ═══ SECURE CONTEXT ═══ */
+function checkSecureContext() {
+  const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  document.getElementById('httpsNotice').style.display = secure ? 'none' : 'block';
+}
+
+function getMedia(constraints) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return Promise.reject(new Error('ต้องใช้ HTTPS เพื่อเปิดกล้อง'));
+  }
+  return navigator.mediaDevices.getUserMedia(constraints);
+}
+
+/* ═══ CAMERA ═══ */
+async function openCamera() {
+  try {
+    const stream = await getMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } } });
+    cameraStream = stream;
+    const vid = document.getElementById('videoEl');
+    vid.srcObject = stream;
+    vid.style.display = 'block';
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    document.getElementById('btnGroupCamera').style.display = 'none';
+    document.getElementById('btnGroupLive').style.display = 'flex';
+  } catch(e) {
+    showToast('ไม่สามารถเปิดกล้อง: ' + e.message, 'error');
+  }
+}
+
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  const vid = document.getElementById('videoEl');
+  vid.srcObject = null; vid.style.display = 'none';
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  document.getElementById('btnGroupCamera').style.display = 'flex';
+  document.getElementById('btnGroupLive').style.display = 'none';
+}
+
+function startCountdown() {
+  document.getElementById('snapBtn').disabled = true;
+  const overlay = document.getElementById('countdownOverlay');
+  const num = document.getElementById('countdownNum');
+  overlay.classList.add('show');
+  let count = 3;
+  num.textContent = count;
+
+  const tick = setInterval(() => {
+    count--;
+    if (count > 0) {
+      num.textContent = count;
+      num.style.animation = 'none';
+      num.offsetHeight;
+      num.style.animation = 'countPulse 0.9s ease-out';
+    } else {
+      clearInterval(tick);
+      overlay.classList.remove('show');
+      capturePhoto();
+      document.getElementById('snapBtn').disabled = false;
+    }
+  }, 900);
+}
+
+function capturePhoto() {
+  const vid = document.getElementById('videoEl');
+  const canvas = document.getElementById('captureCanvas');
+  canvas.width = vid.videoWidth || 640;
+  canvas.height = vid.videoHeight || 480;
+  canvas.getContext('2d').drawImage(vid, 0, 0);
+
+  const flash = document.getElementById('flashOverlay');
+  flash.classList.add('flash');
+  setTimeout(() => flash.classList.remove('flash'), 350);
+
+  photoDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  photoBase64 = photoDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
+
+  closeCamera();
+  setPreviewPhoto(photoDataUrl);
+  showToast('📸 ถ่ายรูปสำเร็จ!', 'success');
+}
+
+function handleUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    photoDataUrl = e.target.result;
+    photoBase64 = photoDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
+    setPreviewPhoto(photoDataUrl);
+    showToast('📁 อัปโหลดสำเร็จ!', 'success');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function setPreviewPhoto(dataUrl) {
+  const img = document.getElementById('photoPreview');
+  img.src = dataUrl; img.style.display = 'block';
+  document.getElementById('cameraPlaceholder').style.display = 'none';
+  document.getElementById('btnGroupCamera').style.display = 'none';
+  document.getElementById('btnGroupCapture').style.display = 'flex';
+}
+
+function resetPhoto() {
+  photoDataUrl = null; photoBase64 = null;
+  const img = document.getElementById('photoPreview');
+  img.src = ''; img.style.display = 'none';
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  document.getElementById('btnGroupCapture').style.display = 'none';
+  document.getElementById('btnGroupCamera').style.display = 'flex';
+}
+
+/* ═══ THEME GRID ═══ */
+function buildThemeGrid() {
+  const grid = document.getElementById('themeGrid');
+  grid.innerHTML = THEMES.map(t => `
+    <div class="theme-tile ${t.bg}" id="tile-${t.id}" data-id="${t.id}">
+      <div class="t-icon" style="color:${t.color}">${t.icon}</div>
+      <div class="t-name">${t.name}</div>
+      <div class="t-en">${t.en}</div>
+    </div>
+  `).join('');
+
+  grid.addEventListener('click', function(e) {
+    const tile = e.target.closest('.theme-tile');
+    if (!tile) return;
+    e.stopPropagation();
+    selectTheme(tile.dataset.id);
+  });
+}
+
+function selectTheme(id) {
+  selectedTheme = THEMES.find(t => t.id === id);
+  document.querySelectorAll('.theme-tile').forEach(t => t.classList.remove('selected'));
+  document.getElementById('tile-' + id).classList.add('selected');
+
+  const pf = document.getElementById('themePreviewFrame');
+  if (photoDataUrl) {
+    pf.innerHTML = `
+      <img src="${photoDataUrl}" style="width:100%;height:100%;object-fit:cover;filter:hue-rotate(${THEMES.indexOf(selectedTheme)*20}deg) saturate(1.3)">
+      <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:12px;background:rgba(0,0,0,0.6);padding:6px;">${selectedTheme.icon} ${selectedTheme.name}</div>`;
+  }
+
+  const btn = document.getElementById('btnGenerate');
+  btn.disabled = false;
+  btn.textContent = `✨ สร้างภาพธีม ${selectedTheme.name}`;
+}
+
+/* ═══ GENERATE ═══ */
+async function startGenerate() {
+  if (!selectedTheme || !photoBase64) { showToast('กรุณาถ่ายรูปและเลือกธีม', 'error'); return; }
+
+  gotoScreen('generating');
+  document.getElementById('genEmoji').textContent = selectedTheme.icon;
+
+  const steps = ['gs1','gs2','gs3','gs4'];
+  const bar = document.getElementById('genProgressBar');
+  let stepIdx = 0;
+
+  const advanceStep = () => {
+    if (stepIdx > 0) {
+      document.getElementById(steps[stepIdx-1]).classList.remove('active');
+      document.getElementById(steps[stepIdx-1]).classList.add('done');
+    }
+    if (stepIdx < steps.length) {
+      document.getElementById(steps[stepIdx]).classList.add('active');
+      bar.style.width = ((stepIdx+1)/steps.length * 100) + '%';
+      stepIdx++;
+    }
+  };
+
+  advanceStep();
+  const stepTimer = setInterval(() => {
+    if (stepIdx < steps.length) advanceStep();
+    else clearInterval(stepTimer);
+  }, 3000);
+
+  try {
+    const res = await fetch('/api/generate-leonardo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        theme: selectedTheme.name,
+        prompt: selectedTheme.prompt,
+        referenceImage: photoBase64,
+        strength: 0.45
+      })
+    });
+
+    clearInterval(stepTimer);
+    steps.forEach(s => { document.getElementById(s).classList.remove('active'); document.getElementById(s).classList.add('done'); });
+    bar.style.width = '100%';
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('Server ' + res.status + ': ' + txt);
+    }
+
+    const data = await res.json();
+    if (data.success && data.imageUrl) {
+      resultUrl = data.imageUrl;
+      showResult(resultUrl);
+    } else {
+      throw new Error(data.error || 'ไม่สามารถสร้างภาพได้');
+    }
+
+  } catch(err) {
+    clearInterval(stepTimer);
+    console.error(err);
+    showToast('⚠️ API ยังไม่เชื่อมต่อ — แสดงตัวอย่างสาธิต', 'error');
+    setTimeout(() => showResult(photoDataUrl, true), 1200);
+  }
+}
+
+/* ═══ RESULT ═══ */
+function showResult(url, isDemo = false) {
+  resultUrl = url;
+  document.getElementById('resultImg').src = url;
+  document.getElementById('compareOriginal').src = photoDataUrl;
+  document.getElementById('compareResult').src = url;
+  document.getElementById('compareThemeName').textContent = selectedTheme.icon + ' ' + selectedTheme.name;
+  document.getElementById('resultBadge').textContent = isDemo ? '⚠️ Demo Mode' : '✦ AI Generated';
+
+  generateQR(url);
+  gotoScreen('result');
+  showToast('🎉 สร้างภาพสำเร็จ!', 'success');
+}
+
+/* ═══ QR CODE ═══ */
+function generateQR(text) {
+  const canvas = document.getElementById('qrCanvas');
+  const ctx = canvas.getContext('2d');
+  const size = 120;
+  canvas.width = size; canvas.height = size;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,size,size);
+
+  let hash = 0;
+  for(let i=0;i<text.length;i++) hash = ((hash<<5)-hash+text.charCodeAt(i))|0;
+
+  const cells = 10;
+  const cell = size / cells;
+  ctx.fillStyle = '#000000';
+  for(let r=0;r<cells;r++) for(let c=0;c<cells;c++) {
+    const inTL = r<3 && c<3, inTR = r<3 && c>=cells-3, inBL = r>=cells-3 && c<3;
+    if(inTL||inTR||inBL) { ctx.fillRect(c*cell,r*cell,cell,cell); continue; }
+    if(((hash >> (r*cells+c)) & 1) || ((r+c)%3===0)) ctx.fillRect(c*cell,r*cell,cell-1,cell-1);
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(size/2-14,size/2-14,28,28);
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('AI', size/2, size/2);
+}
+
+/* ═══ DOWNLOAD ═══ */
+async function downloadResult() {
+  try {
+    const img = document.getElementById('resultImg');
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || 512;
+    canvas.height = img.naturalHeight || 512;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    const link = document.createElement('a');
+    link.download = 'ai-photobooth-' + selectedTheme.id + '-' + Date.now() + '.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.93);
+    link.click();
+    showToast('💾 ดาวน์โหลดสำเร็จ!', 'success');
+  } catch(e) {
+    window.open(resultUrl, '_blank');
+  }
+}
+
+async function shareResult() {
+  try {
+    const img = document.getElementById('resultImg');
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || 512;
+    canvas.height = img.naturalHeight || 512;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    canvas.toBlob(async blob => {
+      const file = new File([blob], 'ai-booth.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: 'AI Photo Booth Thailand', files: [file] });
+      } else {
+        downloadResult();
+      }
+    }, 'image/jpeg', 0.93);
+  } catch(e) { downloadResult(); }
+}
+
+function startAgain() {
+  selectedTheme = null;
+  resetPhoto();
+  document.getElementById('btnGenerate').disabled = true;
+  document.getElementById('btnGenerate').textContent = 'เลือกธีมก่อน';
+  document.querySelectorAll('.theme-tile').forEach(t => t.classList.remove('selected'));
+  ['gs1','gs2','gs3','gs4'].forEach(id => {
+    document.getElementById(id).classList.remove('active','done');
+  });
+  document.getElementById('genProgressBar').style.width = '0%';
+  gotoScreen('photo');
+}
+
+/* ═══ TOAST ═══ */
+let toastTimer;
+function showToast(msg, type='info') {
+  clearTimeout(toastTimer);
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  toastTimer = setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+/* ═══ INIT ═══ */
+buildThemeGrid();
+checkSecureContext();
+</script>
+</body>
+</html>
